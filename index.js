@@ -6,13 +6,37 @@ import inquirer from 'inquirer';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import chalk from 'chalk';
 import Conf from 'conf';
+import ora from 'ora';
 import { validateApiKey, validateProjectStructure } from './utils/validation.js';
 import path from 'path';
+import boxen from 'boxen';
+import gradient from 'gradient-string';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize configuration
+// Modern CLI header
+const showHeader = () => {
+  console.log('\n' + boxen(
+    gradient.pastel.multiline(
+      `
+   ╭─────────────────────────────╮
+   │                             │
+   │   ReadMI - README Builder   │
+   │   ${chalk.dim('v1.1.9')}                  │
+   │                             │
+   ╰─────────────────────────────╯
+    `
+    ),
+    {
+      padding: 1,
+      margin: 1,
+      borderStyle: 'round',
+      borderColor: 'cyan'
+    }
+  ));
+};
+
 const config = new Conf({
   projectName: 'readmi',
   defaults: {
@@ -23,25 +47,29 @@ const config = new Conf({
   }
 });
 
-// Project types configuration
 const PROJECT_TYPES = {
   nodejs: {
+    icon: '⚡',
     files: ['package.json'],
     parser: 'parseNodeProject'
   },
   python: {
+    icon: '🐍',
     files: ['requirements.txt', 'setup.py'],
     parser: 'parsePythonProject'
   },
   java: {
+    icon: '☕',
     files: ['pom.xml', 'build.gradle'],
     parser: 'parseJavaProject'
   },
   rust: {
+    icon: '🦀',
     files: ['Cargo.toml'],
     parser: 'parseRustProject'
   },
   go: {
+    icon: '🐹',
     files: ['go.mod'],
     parser: 'parseGoProject'
   }
@@ -50,6 +78,7 @@ const PROJECT_TYPES = {
 class ReadmeGenerator {
   constructor() {
     this.currentDir = process.cwd();
+    this.spinner = ora();
     this.projectInfo = {
       type: 'unknown',
       files: [],
@@ -60,7 +89,12 @@ class ReadmeGenerator {
 
   async init() {
     try {
-      console.log(chalk.blue('📝 README Generator Starting...'));
+      showHeader();
+      
+      this.spinner.start(chalk.blue('Initializing ReadMI...'));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      this.spinner.succeed(chalk.green('ReadMI initialized successfully'));
+
       const apiKey = await this.getApiKey();
       await this.analyzeProject();
       await this.generateReadme(apiKey);
@@ -70,52 +104,60 @@ class ReadmeGenerator {
   }
 
   async getApiKey() {
-    // Check if API key exists in config
     const savedApiKey = config.get('apiKey');
     
     if (savedApiKey) {
-      console.log(chalk.green('✓ Using saved API key'));
+      this.spinner.succeed(chalk.green('Using saved API key'));
       return savedApiKey;
     }
 
+    this.spinner.stop();
+    console.log('\n' + boxen(chalk.yellow(' 🔑 API Key Required '), {
+      padding: 1,
+      margin: 1,
+      borderStyle: 'round',
+      borderColor: 'yellow'
+    }));
+
     const { apiKey, saveKey } = await inquirer.prompt([
       {
-        type: 'input',
+        type: 'password',
         name: 'apiKey',
-        message: chalk.yellow('Enter your Google AI API Key:'),
+        message: chalk.cyan('Enter your Google AI API Key:'),
+        mask: '*',
         validate: input => {
           try {
             return validateApiKey(input);
           } catch (error) {
-            return error.message;
+            return chalk.red('✖ ') + error.message;
           }
         }
       },
       {
         type: 'confirm',
         name: 'saveKey',
-        message: 'Would you like to save this API key for future use?',
+        message: chalk.cyan('Would you like to save this API key for future use?'),
         default: true
       }
     ]);
 
     if (saveKey) {
       config.set('apiKey', apiKey);
-      console.log(chalk.green('✓ API key saved for future use'));
+      this.spinner.succeed(chalk.green('API key saved successfully'));
     }
 
     return apiKey;
   }
 
   async analyzeProject() {
-    console.log(chalk.blue('\n🔍 Analyzing project structure...'));
+    this.spinner.start(chalk.blue('Analyzing project structure...'));
     
     const files = await fs.readdir(this.currentDir);
     
-    // Detect project type
     for (const [type, config] of Object.entries(PROJECT_TYPES)) {
       if (config.files.some(file => files.includes(file))) {
         this.projectInfo.type = type;
+        this.spinner.text = chalk.blue(`Detected ${config.icon} ${type.toUpperCase()} project`);
         await this[config.parser](files);
         break;
       }
@@ -123,6 +165,8 @@ class ReadmeGenerator {
 
     this.projectInfo.files = await this.getSourceFiles();
     validateProjectStructure(this.projectInfo);
+    
+    this.spinner.succeed(chalk.green('Project analysis complete'));
   }
 
   async generateReadme(apiKey) {
@@ -132,14 +176,12 @@ class ReadmeGenerator {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       
-      // Get package.json content if exists
       let packageInfo = {};
       try {
         const packageJson = await fs.readFile(join(this.currentDir, 'package.json'), 'utf8');
         packageInfo = JSON.parse(packageJson);
       } catch {}
 
-      // Enhanced project analysis
       const projectDetails = {
         ...this.projectInfo,
         gitInfo: await this.getGitInfo(),
@@ -188,7 +230,6 @@ Make the README professional, clear, and specific to this project's actual struc
       const result = await model.generateContent(prompt);
       const text = result.response.text();
       
-      // Post-process the content
       const processedContent = this.postProcessReadme(text, projectDetails);
       
       await fs.writeFile(join(this.currentDir, 'README.md'), processedContent);
@@ -199,7 +240,6 @@ Make the README professional, clear, and specific to this project's actual struc
   }
 
   postProcessReadme(content, projectDetails) {
-    // Remove the badge generation code and just return the content
     return content;
   }
 
@@ -217,25 +257,21 @@ Make the README professional, clear, and specific to this project's actual struc
   async getAllDependencies() {
     const dependencies = {};
     
-    // Check for package.json
     try {
       const packageJson = JSON.parse(await fs.readFile('package.json', 'utf8'));
       dependencies.npm = { ...packageJson.dependencies, ...packageJson.devDependencies };
     } catch {}
 
-    // Check for requirements.txt
     try {
       const requirements = await fs.readFile('requirements.txt', 'utf8');
       dependencies.python = requirements.split('\n').filter(line => line.trim());
     } catch {}
 
-    // Check for composer.json
     try {
       const composerJson = JSON.parse(await fs.readFile('composer.json', 'utf8'));
       dependencies.php = { ...composerJson.require, ...composerJson['require-dev'] };
     } catch {}
 
-    // Add more package manager checks as needed
     return dependencies;
   }
 
@@ -314,15 +350,24 @@ Make the README professional, clear, and specific to this project's actual struc
   }
 
   handleError(error) {
-    console.error(chalk.red('\n❌ Error:'), error.message);
+    this.spinner.fail(chalk.red('Error: ') + error.message);
+    
     if (error.message.includes('API key not valid')) {
-      console.log(chalk.yellow('\nℹ️  Get your API key at:'));
-      console.log(chalk.blue('https://makersuite.google.com/app/apikey'));
+      console.log('\n' + boxen(
+        chalk.yellow('Get your API key at:\n') +
+        chalk.blue('https://makersuite.google.com/app/apikey'),
+        {
+          padding: 1,
+          margin: 1,
+          borderStyle: 'round',
+          borderColor: 'yellow'
+        }
+      ));
     }
+    
     process.exit(1);
   }
 
-  // Project type parsers
   async parseNodeProject(files) {
     const packageJson = JSON.parse(
       await fs.readFile(join(this.currentDir, 'package.json'), 'utf8')
@@ -342,19 +387,17 @@ Make the README professional, clear, and specific to this project's actual struc
     }
   }
 
-  // ... other parser methods for different project types
-
   async getSourceFiles(directory = this.currentDir) {
     const sourceExtensions = [
-      '.js', '.ts', '.jsx', '.tsx',  // JavaScript/TypeScript
-      '.py',                         // Python
-      '.java',                       // Java
-      '.go',                         // Go
-      '.rs',                         // Rust
-      '.rb',                         // Ruby
-      '.php',                        // PHP
-      '.cs',                         // C#
-      '.cpp', '.hpp', '.c', '.h'     // C/C++
+      '.js', '.ts', '.jsx', '.tsx',  
+      '.py',                   
+      '.java',           
+      '.go',                         
+      '.rs',                   
+      '.rb',                     
+      '.php',                   
+      '.cs',                      
+      '.cpp', '.hpp', '.c', '.h'   
     ];
 
     const files = [];
@@ -366,7 +409,6 @@ Make the README professional, clear, and specific to this project's actual struc
         for (const entry of entries) {
           const fullPath = join(dir, entry.name);
           
-          // Skip common exclude directories
           if (entry.name.startsWith('.') || 
               ['node_modules', 'venv', 'dist', 'build'].includes(entry.name)) {
             continue;
@@ -388,7 +430,8 @@ Make the README professional, clear, and specific to this project's actual struc
   }
 }
 
-// Start the generator
+// Start with style
+console.clear();
 new ReadmeGenerator().init().catch(error => {
   console.error(chalk.red('Fatal error:'), error);
   process.exit(1);
