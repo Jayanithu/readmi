@@ -1,6 +1,6 @@
 {
   "name": "@jayanithu/readmi",
-  "version": "1.1.1",
+  "version": "1.1.6",
   "description": "A universal README generator for any programming project",
   "main": "index.js",
   "bin": {
