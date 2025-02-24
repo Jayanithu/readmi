@@ -1,69 +1,74 @@
 ![Version](https://img.shields.io/badge/version-1.1.8-blue.svg) ![Language](https://img.shields.io/badge/language-Unknown-green.svg) ![License](https://img.shields.io/badge/license-MIT-orange.svg)
 
-## 🚀 Readmi: Universal README Generator
+# 📖 @jayanithu/readmi
 
-### 📖 Description
+**A universal README generator for any programming project.**
 
-Readmi is a comprehensive tool that simplifies the creation of professional READMEs for any programming project.
+## 📦 Installation
 
-### 📦 Installation
-
-#### Using npm:
+### Using npm
 
 ```sh
-npm install -g @jayanithu/readmi
+npm i @jayanithu/readmi
 ```
 
-#### Using yarn:
+### Using yarn
 
 ```sh
-yarn global add @jayanithu/readmi
+yarn add @jayanithu/readmi
 ```
 
-### 🛠️ Usage
+## 🛠 Usage
 
-1. Run the command `readmi`.
-2. Answer a series of questions prompted by the CLI.
-3. Provide project-specific information such as:
-   - Project name
-   - Purpose and description
-   - Installation instructions
-4. Select a project type from the predefined templates.
-5. Preview and generate your customized README.
+After installation, run the following command:
 
-### 📦 Dependencies
+```sh
+npx readmi
+```
 
-| Dependency | Purpose |
-|---|---|
-| @google/generative-ai | Assists in generating text prompts |
-| inquirer | Handles user input through prompts |
-| chalk | Provides colorful console output |
-| ora | Displays loading spinner during generation |
-| conf | Validates user inputs |
+Follow the prompts to generate a README.md file for your project.
 
-### 📝 Development
+## 🤝 Contributing
 
-#### Setup
+Contributions are welcome! Please read the [contributing guidelines](https://github.com/Jayanithu/readmi/blob/main/CONTRIBUTING.md) before submitting any pull requests.
 
-1. Clone the repository: `git clone https://github.com/Jayanithu/readmi.git`
-2. Install dependencies: `npm install`
+## 📚 Dependencies
 
-#### Scripts
+- [`@google/generative-ai`](https://www.npmjs.com/package/@google/generative-ai): Generates AI-powered content for the README.
+- [`inquirer`](https://www.npmjs.com/package/inquirer): Prompts the user for input during the generation process.
+- [`chalk`](https://www.npmjs.com/package/chalk): Stylizes console output.
+- [`ora`](https://www.npmjs.com/package/ora): Displays a spinner during the generation process.
+- [`conf`](https://www.npmjs.com/package/conf): Manages configuration options.
 
-| Script | Purpose |
-|---|---|
-| `test` | Currently not implemented |
+## 💻 Development
 
-### 🤝 Contributing
+To contribute to the development of this project, follow these steps:
 
-Contributions are welcome! Please see the [contributing guidelines](CONTRIBUTING.md) for details.
+1. Clone the repository:
+```sh
+git clone https://github.com/Jayanithu/readmi.git
+```
+2. Install dependencies:
+```sh
+npm i
+```
+3. Make changes and commit:
+```sh
+git add .
+git commit -m "Your commit message"
+```
+4. Push changes:
+```sh
+git push origin main
+```
 
-### 🛡️ License
 
-This project is licensed under the MIT License.
+## 📝 License
 
-### 📊 Badges
+MIT
 
-[![npm version](https://badge.fury.io/js/@jayanithu%2Freadmi.svg)](https://badge.fury.io/js/@jayanithu%2Freadmi)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Main Language](https://img.shields.io/badge/Main_Language-Unknown-green.svg)](https://github.com/Jayanithu/readmi)
+## 🏆 Badges
+
+[![Version](https://img.shields.io/npm/v/@jayanithu/readmi.svg)](https://www.npmjs.com/package/@jayanithu/readmi)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Jayanithu/readmi/blob/main/LICENSE)
+[![Main Language](https://img.shields.io/badge/Main%20Language-Unknown-green.svg)](https://github.com/Jayanithu/readmi)
