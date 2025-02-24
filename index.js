@@ -5,11 +5,47 @@ import fs from 'fs/promises';
 import inquirer from 'inquirer';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import chalk from 'chalk';
+import Conf from 'conf';
 import { validateApiKey, validateProjectStructure } from './utils/validation.js';
-import { PROJECT_TYPES, FILE_EXTENSIONS } from './config/projectTypes.js';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Initialize configuration
+const config = new Conf({
+  projectName: 'readmi',
+  defaults: {
+    apiKey: null,
+    defaultLicense: 'MIT',
+    customPrompts: {},
+    outputFormat: 'markdown'
+  }
+});
+
+// Project types configuration
+const PROJECT_TYPES = {
+  nodejs: {
+    files: ['package.json'],
+    parser: 'parseNodeProject'
+  },
+  python: {
+    files: ['requirements.txt', 'setup.py'],
+    parser: 'parsePythonProject'
+  },
+  java: {
+    files: ['pom.xml', 'build.gradle'],
+    parser: 'parseJavaProject'
+  },
+  rust: {
+    files: ['Cargo.toml'],
+    parser: 'parseRustProject'
+  },
+  go: {
+    files: ['go.mod'],
+    parser: 'parseGoProject'
+  }
+};
 
 class ReadmeGenerator {
   constructor() {
@@ -34,18 +70,40 @@ class ReadmeGenerator {
   }
 
   async getApiKey() {
-    const { apiKey } = await inquirer.prompt([{
-      type: 'input',
-      name: 'apiKey',
-      message: chalk.yellow('Enter your Google AI API Key:'),
-      validate: input => {
-        try {
-          return validateApiKey(input);
-        } catch (error) {
-          return error.message;
+    // Check if API key exists in config
+    const savedApiKey = config.get('apiKey');
+    
+    if (savedApiKey) {
+      console.log(chalk.green('✓ Using saved API key'));
+      return savedApiKey;
+    }
+
+    const { apiKey, saveKey } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'apiKey',
+        message: chalk.yellow('Enter your Google AI API Key:'),
+        validate: input => {
+          try {
+            return validateApiKey(input);
+          } catch (error) {
+            return error.message;
+          }
         }
+      },
+      {
+        type: 'confirm',
+        name: 'saveKey',
+        message: 'Would you like to save this API key for future use?',
+        default: true
       }
-    }]);
+    ]);
+
+    if (saveKey) {
+      config.set('apiKey', apiKey);
+      console.log(chalk.green('✓ API key saved for future use'));
+    }
+
     return apiKey;
   }
 
@@ -74,6 +132,13 @@ class ReadmeGenerator {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       
+      // Get package.json content if exists
+      let packageInfo = {};
+      try {
+        const packageJson = await fs.readFile(join(this.currentDir, 'package.json'), 'utf8');
+        packageInfo = JSON.parse(packageJson);
+      } catch {}
+
       // Enhanced project analysis
       const projectDetails = {
         ...this.projectInfo,
@@ -81,45 +146,73 @@ class ReadmeGenerator {
         dependencies: await this.getAllDependencies(),
         structure: await this.getProjectStructure(),
         mainLanguage: await this.detectMainLanguage(),
-        packageManagers: await this.detectPackageManagers()
+        packageManagers: await this.detectPackageManagers(),
+        name: packageInfo.name || path.basename(this.currentDir),
+        version: packageInfo.version,
+        description: packageInfo.description,
+        scripts: packageInfo.scripts
       };
 
-      const prompt = `Create a comprehensive README.md for a ${projectDetails.type} project.
-      
-Project Details:
+      const prompt = `Create a detailed README.md for a ${projectDetails.type} project named "${projectDetails.name}".
+
+Project Analysis:
+- Name: ${projectDetails.name}
+${projectDetails.version ? `- Version: ${projectDetails.version}` : ''}
+${projectDetails.description ? `- Description: ${projectDetails.description}` : ''}
 - Main Language: ${projectDetails.mainLanguage}
 - Package Managers: ${projectDetails.packageManagers.join(', ')}
 - Dependencies: ${JSON.stringify(projectDetails.dependencies, null, 2)}
-- Project Structure: ${projectDetails.structure}
-${projectDetails.gitInfo ? `- Git Repository: ${projectDetails.gitInfo}` : ''}
+- Available Scripts: ${JSON.stringify(projectDetails.scripts, null, 2)}
+- Project Structure:
+${projectDetails.structure}
+${projectDetails.gitInfo ? `- Git Repository: ${JSON.stringify(projectDetails.gitInfo, null, 2)}` : ''}
 
-Please include:
-1. Clear project title and description
-2. Comprehensive installation instructions for all detected package managers
-3. Detailed usage examples
-4. Complete list of dependencies and requirements
-5. Development setup instructions
-6. Testing instructions
-7. Contributing guidelines
-8. License information
-9. Project structure overview
-10. Troubleshooting section
+Requirements:
+1. Start with a clear, concise project title and description
+2. Include all available installation methods using detected package managers
+3. List all setup steps in order
+4. Provide specific usage examples based on available scripts
+5. Document all dependencies with their purposes
+6. Include development setup instructions
+7. Add contributing guidelines if git repository exists
+8. Include license information
+9. Add badges for: version, license, main language
+10. Use proper markdown formatting with:
+    - Code blocks with correct language tags
+    - Clear section headers with emojis
+    - Tables for structured data
+    - Links to important resources
 
-Format the README with proper markdown, including:
-- Code blocks with language specification
-- Tables where appropriate
-- Badges for version, license, etc.
-- Emojis for better readability
-- Clear section headers`;
+Make the README professional, clear, and specific to this project's actual structure and purpose.`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();
       
-      await fs.writeFile(join(this.currentDir, 'README.md'), text);
+      // Post-process the content
+      const processedContent = this.postProcessReadme(text, projectDetails);
+      
+      await fs.writeFile(join(this.currentDir, 'README.md'), processedContent);
       console.log(chalk.green('\n✨ README.md generated successfully!'));
     } catch (error) {
       throw new Error(`README generation failed: ${error.message}`);
     }
+  }
+
+  postProcessReadme(content, projectDetails) {
+    // Add badges
+    const badges = [];
+    if (projectDetails.version) {
+      badges.push(`![Version](https://img.shields.io/badge/version-${projectDetails.version}-blue.svg)`);
+    }
+    badges.push(`![Language](https://img.shields.io/badge/language-${projectDetails.mainLanguage}-green.svg)`);
+    badges.push('![License](https://img.shields.io/badge/license-MIT-orange.svg)');
+
+    // Add badges at the top
+    if (badges.length > 0) {
+      content = badges.join(' ') + '\n\n' + content;
+    }
+
+    return content;
   }
 
   async getGitInfo() {
