@@ -199,19 +199,7 @@ Make the README professional, clear, and specific to this project's actual struc
   }
 
   postProcessReadme(content, projectDetails) {
-    // Add badges
-    const badges = [];
-    if (projectDetails.version) {
-      badges.push(`![Version](https://img.shields.io/badge/version-${projectDetails.version}-blue.svg)`);
-    }
-    badges.push(`![Language](https://img.shields.io/badge/language-${projectDetails.mainLanguage}-green.svg)`);
-    badges.push('![License](https://img.shields.io/badge/license-MIT-orange.svg)');
-
-    // Add badges at the top
-    if (badges.length > 0) {
-      content = badges.join(' ') + '\n\n' + content;
-    }
-
+    // Remove the badge generation code and just return the content
     return content;
   }
 
