@@ -262,6 +262,49 @@ Format the README with proper markdown, including:
   }
 
   // ... other parser methods for different project types
+
+  async getSourceFiles(directory = this.currentDir) {
+    const sourceExtensions = [
+      '.js', '.ts', '.jsx', '.tsx',  // JavaScript/TypeScript
+      '.py',                         // Python
+      '.java',                       // Java
+      '.go',                         // Go
+      '.rs',                         // Rust
+      '.rb',                         // Ruby
+      '.php',                        // PHP
+      '.cs',                         // C#
+      '.cpp', '.hpp', '.c', '.h'     // C/C++
+    ];
+
+    const files = [];
+    
+    async function scanDir(dir) {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name);
+          
+          // Skip common exclude directories
+          if (entry.name.startsWith('.') || 
+              ['node_modules', 'venv', 'dist', 'build'].includes(entry.name)) {
+            continue;
+          }
+
+          if (entry.isDirectory()) {
+            await scanDir(fullPath);
+          } else if (sourceExtensions.some(ext => entry.name.endsWith(ext))) {
+            files.push(fullPath);
+          }
+        }
+      } catch (error) {
+        console.error(`Error scanning directory ${dir}:`, error);
+      }
+    }
+
+    await scanDir(directory);
+    return files;
+  }
 }
 
 // Start the generator
