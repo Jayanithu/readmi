@@ -70,15 +70,166 @@ class ReadmeGenerator {
   async generateReadme(apiKey) {
     console.log(chalk.blue('\n🤖 Generating README content...'));
     
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      
+      // Enhanced project analysis
+      const projectDetails = {
+        ...this.projectInfo,
+        gitInfo: await this.getGitInfo(),
+        dependencies: await this.getAllDependencies(),
+        structure: await this.getProjectStructure(),
+        mainLanguage: await this.detectMainLanguage(),
+        packageManagers: await this.detectPackageManagers()
+      };
+
+      const prompt = `Create a comprehensive README.md for a ${projectDetails.type} project.
+      
+Project Details:
+- Main Language: ${projectDetails.mainLanguage}
+- Package Managers: ${projectDetails.packageManagers.join(', ')}
+- Dependencies: ${JSON.stringify(projectDetails.dependencies, null, 2)}
+- Project Structure: ${projectDetails.structure}
+${projectDetails.gitInfo ? `- Git Repository: ${projectDetails.gitInfo}` : ''}
+
+Please include:
+1. Clear project title and description
+2. Comprehensive installation instructions for all detected package managers
+3. Detailed usage examples
+4. Complete list of dependencies and requirements
+5. Development setup instructions
+6. Testing instructions
+7. Contributing guidelines
+8. License information
+9. Project structure overview
+10. Troubleshooting section
+
+Format the README with proper markdown, including:
+- Code blocks with language specification
+- Tables where appropriate
+- Badges for version, license, etc.
+- Emojis for better readability
+- Clear section headers`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      
+      await fs.writeFile(join(this.currentDir, 'README.md'), text);
+      console.log(chalk.green('\n✨ README.md generated successfully!'));
+    } catch (error) {
+      throw new Error(`README generation failed: ${error.message}`);
+    }
+  }
+
+  async getGitInfo() {
+    try {
+      const { execSync } = await import('child_process');
+      const remoteUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+      return { remoteUrl, branch };
+    } catch {
+      return null;
+    }
+  }
+
+  async getAllDependencies() {
+    const dependencies = {};
     
-    const prompt = this.generatePrompt();
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Check for package.json
+    try {
+      const packageJson = JSON.parse(await fs.readFile('package.json', 'utf8'));
+      dependencies.npm = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    } catch {}
+
+    // Check for requirements.txt
+    try {
+      const requirements = await fs.readFile('requirements.txt', 'utf8');
+      dependencies.python = requirements.split('\n').filter(line => line.trim());
+    } catch {}
+
+    // Check for composer.json
+    try {
+      const composerJson = JSON.parse(await fs.readFile('composer.json', 'utf8'));
+      dependencies.php = { ...composerJson.require, ...composerJson['require-dev'] };
+    } catch {}
+
+    // Add more package manager checks as needed
+    return dependencies;
+  }
+
+  async getProjectStructure() {
+    const structure = [];
+    const ignoredDirs = ['node_modules', 'venv', '.git', 'dist', 'build'];
     
-    await fs.writeFile(join(this.currentDir, 'README.md'), text);
-    console.log(chalk.green('\n✨ README.md generated successfully!'));
+    async function scanDir(dir, depth = 0) {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (ignoredDirs.includes(entry.name)) continue;
+        
+        if (entry.isDirectory()) {
+          structure.push(`${'  '.repeat(depth)}📁 ${entry.name}/`);
+          await scanDir(join(dir, entry.name), depth + 1);
+        } else {
+          structure.push(`${'  '.repeat(depth)}📄 ${entry.name}`);
+        }
+      }
+    }
+    
+    await scanDir(this.currentDir);
+    return structure.join('\n');
+  }
+
+  async detectMainLanguage() {
+    const extensions = {};
+    
+    async function countFiles(dir) {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith('.')) {
+          await countFiles(join(dir, entry.name));
+        } else {
+          const ext = entry.name.split('.').pop();
+          if (ext) extensions[ext] = (extensions[ext] || 0) + 1;
+        }
+      }
+    }
+    
+    await countFiles(this.currentDir);
+    const mainExt = Object.entries(extensions)
+      .sort(([,a], [,b]) => b - a)[0]?.[0];
+      
+    const langMap = {
+      js: 'JavaScript', py: 'Python', java: 'Java',
+      rb: 'Ruby', php: 'PHP', go: 'Go',
+      rs: 'Rust', cs: 'C#', cpp: 'C++'
+    };
+    
+    return langMap[mainExt] || 'Unknown';
+  }
+
+  async detectPackageManagers() {
+    const managers = [];
+    const files = await fs.readdir(this.currentDir);
+    
+    const packageFiles = {
+      'package.json': 'npm/yarn',
+      'requirements.txt': 'pip',
+      'composer.json': 'composer',
+      'Gemfile': 'bundler',
+      'go.mod': 'go modules',
+      'pom.xml': 'maven',
+      'build.gradle': 'gradle',
+      'Cargo.toml': 'cargo'
+    };
+    
+    for (const [file, manager] of Object.entries(packageFiles)) {
+      if (files.includes(file)) managers.push(manager);
+    }
+    
+    return managers;
   }
 
   handleError(error) {
