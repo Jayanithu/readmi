@@ -1,6 +1,6 @@
 import Conf from 'conf';
 
-export const config = new Conf({
+const config = new Conf({
   projectName: 'readmi',
   defaults: {
     apiKey: null,
@@ -8,4 +8,6 @@ export const config = new Conf({
     customPrompts: {},
     outputFormat: 'markdown'
   }
-}); 
+});
+
+export default config; 
