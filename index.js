@@ -7,7 +7,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import chalk from 'chalk';
 import Conf from 'conf';
 import ora from 'ora';
-import path from 'path';
 import boxen from 'boxen';
 import gradient from 'gradient-string';
 import { execSync } from 'child_process';
