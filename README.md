@@ -5,7 +5,6 @@ A universal README generator for any programming project.
 ### 💻 Usage
 
 - Install using npm: `npm i @jayanithu/readmi`
-- Install using yarn: `yarn add @jayanithu/readmi`
 
 ### 📖 Commands
 
