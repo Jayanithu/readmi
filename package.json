@@ -1,6 +1,6 @@
 {
   "name": "@jayanithu/readmi",
-  "version": "2.1.2",
+  "version": "2.2.2",
   "description": "Modern README generator powered by AI",
   "main": "index.js",
   "type": "module",
@@ -17,7 +17,7 @@
     "ai",
     "cli"
   ],
-  "author": "Your Name",
+  "author": "jayanithu",
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
