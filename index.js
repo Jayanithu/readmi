@@ -57,10 +57,12 @@ class ReadmeGenerator {
   async init() {
     try {
       this.showHeader();
+
       if (args.includes('-v') || args.includes('--version')) {
         this.showVersion();
         return;
       }
+
       if (args.includes('--update')) {
         const spinner = ora('Checking for updates...').start();
         try {
@@ -72,18 +74,22 @@ class ReadmeGenerator {
           process.exit(1);
         }
       }
+
       if (args.includes('-h') || args.includes('--help')) {
         this.showHelp();
         return;
       }
+
       if (args[0] === 'models') {
         await this.listAvailableModels();
         return;
       }
+
       if (args[0] === 'config') {
         await this.handleConfig();
         return;
       }
+
       this.spinner.start(chalk.blue('Initializing ReadMI...'));
       const apiKey = await this.getApiKey();
       const projectInfo = await analyzeProject(this.currentDir);
@@ -131,7 +137,7 @@ class ReadmeGenerator {
               '╭─────────────────────────────╮',
               '│                             │',
               '│   ReadMI - README Builder   │',
-              '│         v2.1.2              │',
+              '│         v2.2.2              │',
               '│                             │',
               '╰─────────────────────────────╯'
             ].join('\n')
@@ -142,7 +148,7 @@ class ReadmeGenerator {
   }
 
   showVersion() {
-    console.log(chalk.cyan('ReadMI v2.1.2'));
+    console.log(chalk.cyan('ReadMI v2.2.2'));
     process.exit(0);
   }
 
@@ -174,6 +180,7 @@ class ReadmeGenerator {
   async getApiKey() {
     const savedApiKey = config.get('apiKey');
     if (savedApiKey) return savedApiKey;
+
     this.spinner.stop();
     const { apiKey, saveKey } = await inquirer.prompt([
       {
@@ -189,6 +196,7 @@ class ReadmeGenerator {
         default: true
       }
     ]);
+
     if (saveKey) {
       config.set('apiKey', apiKey);
       this.spinner.succeed(chalk.green('API key saved'));
@@ -198,6 +206,7 @@ class ReadmeGenerator {
 
   async generateReadme(apiKey, projectInfo) {
     this.spinner.start(chalk.blue('Analyzing project...'));
+
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const preferredModels = [
@@ -211,6 +220,7 @@ class ReadmeGenerator {
       ];
       let selectedModel = null;
       let workingModel = null;
+
       for (const modelName of preferredModels) {
         try {
           const tempModel = genAI.getGenerativeModel({
@@ -232,6 +242,7 @@ class ReadmeGenerator {
           continue;
         }
       }
+
       if (!workingModel || !selectedModel) {
         workingModel = genAI.getGenerativeModel({
           model: 'gemini-pro',
@@ -243,7 +254,8 @@ class ReadmeGenerator {
           }
         });
       }
-      const modelType = selectedModel.toLowerCase();
+
+      const modelType = selectedModel?.toLowerCase() || '';
       if (modelType.includes('2.0')) {
         this.spinner.info(chalk.green('✨ Using Gemini 2.0 with enhanced capabilities'));
       } else if (modelType.includes('1.5')) {
@@ -251,7 +263,10 @@ class ReadmeGenerator {
       } else if (modelType.includes('flash')) {
         this.spinner.info(chalk.green('⚡ Using Flash model for faster generation'));
       }
-      const promptText = `Create a modern README.md for ${projectInfo.name}:
+
+      // Updated prompt to include Bun instructions and emphasize clarity
+      const promptText = `Create a modern, precise, and clean README.md for ${projectInfo.name}. 
+The README should support installation via both npm and Bun. 
 
 Project Details:
 ${JSON.stringify(projectInfo, null, 2)}
@@ -270,8 +285,13 @@ Generate a README with these sections and emojis:
    - 💪 Core feature four
 
 3. 📦 Installation
+   - Show how to install with npm
    \`\`\`bash
    npm install ${projectInfo.name}
+   \`\`\`
+   - Show how to install with Bun
+   \`\`\`bash
+   bun install ${projectInfo.name}
    \`\`\`
 
 4. 🎮 Quick Start
@@ -307,7 +327,8 @@ Style Requirements:
 - Keep content concise but informative
 - Add code blocks with language tags
 - Make it visually appealing
-- Use tables for structured data
+- Use tables for structured data if beneficial
+- Provide clear instructions for both npm and Bun
 
 Important:
 - Focus on developer experience
@@ -317,13 +338,16 @@ Important:
 - Make it easy to navigate
 
 Please provide the content in markdown format.`;
+
       try {
         const result = await workingModel.generateContent([{ text: promptText }]);
         const response = await result.response;
         const readmeContent = response.text();
+
         if (!readmeContent) {
           throw new Error('Generated content is empty');
         }
+
         const processedContent = this.postProcessReadme(readmeContent);
         await fs.writeFile('README.md', processedContent);
         this.spinner.succeed(chalk.green('✨ README.md generated successfully!'));
@@ -331,17 +355,19 @@ Please provide the content in markdown format.`;
         try {
           const fallbackPrompt = `Create a simple README for ${projectInfo.name} with these sections:
 1. Project Description
-2. Installation (npm install ${projectInfo.name})
+2. Installation (npm and bun)
 3. Basic Usage
 4. License
 
-Keep it simple and clear, use markdown format.`;
+Keep it simple, precise, and clear. Use markdown format.`;
           const fallbackResult = await workingModel.generateContent([{ text: fallbackPrompt }]);
           const fallbackResponse = await fallbackResult.response;
           const fallbackContent = fallbackResponse.text();
+
           if (!fallbackContent) {
             throw new Error('Generated content is empty');
           }
+
           const processedContent = this.postProcessReadme(fallbackContent);
           await fs.writeFile('README.md', processedContent);
           this.spinner.succeed(chalk.yellow('✨ README.md generated with minimal content (fallback mode)'));
@@ -358,26 +384,19 @@ Keep it simple and clear, use markdown format.`;
   }
 
   postProcessReadme(content) {
-    const topBadges = [
-      `[![npm version](https://img.shields.io/npm/v/@jayanithu/readmi)](https://www.npmjs.com/package/@jayanithu/readmi)`,
-      `[![License](https://img.shields.io/npm/l/@jayanithu/readmi)](LICENSE)`,
-      `[![Downloads](https://img.shields.io/npm/dw/@jayanithu/readmi)](https://www.npmjs.com/package/@jayanithu/readmi)`
-    ].join(' ');
-    let enhancedContent = `# 🚀 @jayanithu/readmi\n\n${topBadges}\n\n**Generate clean and informative README files with the power of AI**\n`;
-    enhancedContent += content
-      .replace(/\[!\[npm version\]\([^)]*\).*\n?/gi, '')
-      .replace(/\[!\[License\]\([^)]*\).*\n?/gi, '')
-      .replace(/\[!\[Downloads\]\([^)]*\).*\n?/gi, '')
-      .replace(/```markdown/g, '```')
-      .replace(/^# .*$/m, '')
+    let processed = content.replace(/```markdown/g, '```');
+    if (processed.startsWith('```')) {
+      processed = processed.replace(/^```[a-z]*\n?/, '');
+    }
+    processed = processed
       .replace(/\n(#+)\s/g, '\n\n$1 ')
-      .replace(/```(\w+)\n/g, '```$1\n')
       .replace(/\n-\s/g, '\n• ')
       .replace(/\n{3,}/g, '\n\n')
-      .replace(/(\n\n---\n\n)/g, '\n\n')
       .trim();
-    enhancedContent += '\n\n---\n_Made with ❤️ using ReadMI_\n';
-    return enhancedContent;
+
+    // Append a friendly footer
+    processed += '\n\n---\n_Made with ❤️ using ReadMI by jayanithu_\n';
+    return processed;
   }
 
   async handleConfig() {
