@@ -1,126 +1,109 @@
-![Version](https://img.shields.io/badge/version-2.0.2-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+# 🚀 @jayanithu/readmi: Modern README Generator Powered by AI
 
----
+[![npm version](https://img.shields.io/npm/v/@jayanithu/readmi)](https://www.npmjs.com/package/@jayanithu/readmi)
+[![npm downloads](https://img.shields.io/npm/dm/@jayanithu/readmi)](https://www.npmjs.com/package/@jayanithu/readmi)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 @jayanithu/readmi: The Modern README Generator powered by AI 🤖
+⚡ Generate stunning README files effortlessly with AI!
 
-[![npm version](https://badge.fury.io/js/%40jayanithu%2Freadmi.svg)](https://badge.fury.io/js/%40jayanithu%2Freadmi)
-[![downloads](https://img.shields.io/npm/dm/@jayanithu/readmi.svg?style=flat-square)](https://www.npmjs.com/package/@jayanithu/readmi)
-[![license](https://img.shields.io/npm/l/@jayanithu/readmi.svg?style=flat-square)](https://github.com/jayanithu/readmi/blob/main/LICENSE)
+```markdown
 
-### ⚡️ Quickly create stunning READMEs that will **wow** your users and improve your documentation game.
+[![npm version](https://img.shields.io/npm/v/@jayanithu/readmi?style=flat-square)](https://www.npmjs.com/package/@jayanithu/readmi)
+[![npm downloads](https://img.shields.io/npm/dw/@jayanithu/readmi?style=flat-square)](https://www.npmjs.com/package/@jayanithu/readmi)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/jayanithu/readmi/graphs/commit-activity)
 
----
+Effortlessly generate professional README files with the power of AI.  Spend less time writing documentation and more time building!
 
 ## ✨ Features
 
-- 🎯 **AI-Powered Content**: Let our AI assistant craft compelling and informative content tailored to your project.
-- 🔥 **Stunning Markdown Output**: Generate beautiful and well-structured Markdown READMEs that stand out from the crowd.
-- ⚡ **Blazing-Fast Generation**: Save time and effort with instant README generation at your fingertips.
-- 💪 **Customization and Control**: Fine-tune your README with a range of customization options to match your project's identity.
-
----
+*   🎯 **AI-Powered Generation:** Creates comprehensive READMEs based on project analysis.
+*   🔥 **Customizable Templates:** Tailor your READMEs to match your project's style.
+*   ⚡ **CLI Interface:**  Easy-to-use command-line interface for quick generation.
+*   💪 **Modern & Clean:**  Generates READMEs that are visually appealing and easy to read.
 
 ## 📦 Installation
 
-```bash
-npm install @jayanithu/readmi
-```
+Install the package globally using npm:
 
----
+```bash
+npm install -g @jayanithu/readmi
+```
 
 ## 🎮 Quick Start
 
-### 🔑 API Key Setup (if needed)
+1.  **🔑 API Key Setup (Optional):** Some features may require an API key (e.g., Google Generative AI).  Configure this using:
 
-If you're using the AI features, you'll need to set up your API key. Follow the instructions provided in the documentation.
+    ```bash
+    readmi config set api_key YOUR_API_KEY
+    ```
 
-### 📝 Basic Configuration
+2.  **📝 Basic Configuration:**  Navigate to your project directory.
 
-Create a `readme.config.js` file in your project root directory and configure your options. Here's an example:
+3.  **🎯 First Command:** Generate a basic README:
 
-```js
-module.exports = {
-  title: 'My Awesome Project',
-  description: 'This is a description of my awesome project.',
-};
-```
-
-### 🎯 First Command
-
-Run the following command to generate your README:
-
-```bash
-readmi
-```
-
----
+    ```bash
+    readmi generate
+    ```
 
 ## 💻 Usage Examples
 
-### 🌟 Basic Usage
+*   🌟 **Basic Usage:**
 
-```bash
-readmi --title "My Project" --description "A short description."
-```
+    ```bash
+    readmi generate
+    ```
 
-### 🔥 Advanced Features
+    This command will analyze your project and generate a basic README file.
 
-Use the `--ai` flag to enable AI-powered content generation. Customize the AI prompt as needed.
+*   🔥 **Advanced Features:**
 
-```bash
-readmi --title "My Project" --description "A short description." --ai --aiPrompt "Write a captivating introduction for my README."
-```
+    You can customize the generated README with specific options. For example, to specify a custom title:
 
-### 💡 Tips and Tricks
+    ```bash
+    readmi generate --title "My Awesome Project"
+    ```
 
-- Use markdown extensions to enhance your README with tables, code blocks, and more.
-- Experiment with different AI prompts to get the perfect content for your project.
-- Check out the [documentation](https://jayanithu.github.io/readmi/) for more tips and tricks.
+*   💡 **Tips and Tricks:**
 
----
+    *   Use the `--description` flag to provide a more detailed project description for better AI generation.
+    *   Explore the configuration options to fine-tune the generated README to your liking.
 
 ## ⚙️ Configuration
 
-### 🛠️ Available Options
+The `readmi` CLI tool provides several configuration options.
 
-| Option | Description |
-|---|---|
-| `title` | The title of your README |
-| `description` | A brief description of your project |
-| `ai` | Enable AI-powered content generation |
-| `aiPrompt` | Customize the AI prompt for content generation |
-| `output` | The output file path for your README |
-| `template` | The template to use for README generation |
+*   🛠️ **Available Options:**
 
-### 🎨 Customization
+    | Option      | Description                                        | Example                                |
+    |-------------|----------------------------------------------------|----------------------------------------|
+    | `api_key`   | Sets the API key for AI services.                  | `readmi config set api_key YOUR_KEY`   |
+    | `author`    | Sets the author name.                              | `readmi config set author "Your Name"` |
+    | `template`  | Specifies a custom template file.                 | `readmi config set template ./my-template.md` |
 
-Customize the look and feel of your README with the following options:
+*   🎨 **Customization:**
 
-- `theme` | Choose a pre-defined theme or create your own |
-- `colors` | Override the default colors used in the theme |
-- `fonts` | Customize the fonts used in the README |
+    You can customize the generated README by modifying the configuration file or using command-line flags.
 
-### 🔧 Advanced Settings
+*   🔧 **Advanced Settings:**
 
-| Option | Description |
-|---|---|
-| `ignoreExisting` | Overwrite an existing README file |
-| `silent` | Suppress output messages |
-| `verbose` | Print verbose output messages |
-
----
+    For advanced configuration, you can directly edit the configuration file located in your home directory (e.g., `~/.config/readmi/config.json`).
 
 ## 📝 License & Contributing
 
-### 📄 License
+*   📄 **License Info:**
 
-This project is licensed under the MIT License.
+    This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### 🤝 How to Contribute
+*   🤝 **How to Contribute:**
 
-Contributions are always welcome! Please read the [contributing guidelines](https://github.com/jayanithu/readmi/blob/main/CONTRIBUTING.md) before submitting a pull request.
+    We welcome contributions! Please fork the repository and submit a pull request with your changes.
 
-### 👥 Contributors
+*   👥 **Contributors:**
 
-Thanks to all the contributors who made this project possible!
+    [Your Name](https://github.com/jayanithu)
+```
+
+---
+
+_Made with ❤️ using ReadMI_
