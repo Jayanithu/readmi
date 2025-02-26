@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import chalk from 'chalk';
 import Conf from 'conf';
 import ora from 'ora';
+import path from 'path';
 import boxen from 'boxen';
 import gradient from 'gradient-string';
 import { execSync } from 'child_process';
@@ -82,6 +83,16 @@ class ReadmeGenerator {
         return;
       }
 
+      if (args[0] === 'models') {
+        await this.listAvailableModels();
+        return;
+      }
+
+      if (args[0] === 'config') {
+        await this.handleConfig();
+        return;
+      }
+
       this.spinner.start(chalk.blue('Initializing ReadMI...'));
       const apiKey = await this.getApiKey();
       const projectInfo = await analyzeProject(this.currentDir);
@@ -91,13 +102,39 @@ class ReadmeGenerator {
     }
   }
 
+  async listAvailableModels() {
+    const apiKey = await this.getApiKey();
+    this.spinner.start(chalk.blue('Fetching available models...'));
+    
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const modelList = await genAI.listModels();
+      
+      this.spinner.stop();
+      
+      console.log('\n' + boxen(
+        gradient.pastel.multiline([
+          '📋 Available Gemini Models:',
+          '',
+          ...modelList.models.map(model => 
+            `• ${chalk.cyan(model.name)}\n  ${chalk.gray(model.description || 'No description available')}`
+          )
+        ].join('\n')),
+        { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'green' }
+      ));
+    } catch (error) {
+      this.spinner.fail(chalk.red('Failed to fetch models: ') + error.message);
+      process.exit(1);
+    }
+  }
+
   showHeader() {
     console.log('\n' + boxen(
       gradient.pastel.multiline([
         '╭─────────────────────────────╮',
         '│                             │',
         '│   ReadMI - README Builder   │',
-        '│         v2.0.2              │',
+        '│         v2.1.2              │',
         '│                             │',
         '╰─────────────────────────────╯'
       ].join('\n')),
@@ -106,7 +143,7 @@ class ReadmeGenerator {
   }
 
   showVersion() {
-    console.log(chalk.cyan('ReadMI v2.0.0'));
+    console.log(chalk.cyan('ReadMI v2.1.2'));
     process.exit(0);
   }
 
@@ -115,12 +152,15 @@ class ReadmeGenerator {
       gradient.pastel.multiline([
         '📘 ReadMI Commands:',
         '',
-        '  readmi          Generate README',
-        '  readmi -v       Display version',
-        '  readmi --update Update to latest version',
-        '  readmi -h       Display help',
+        '  readmi                    Generate README',
+        '  readmi models             List available AI models',
+        '  readmi config             Manage configuration',
+        '  readmi config -r          Remove saved API key',
+        '  readmi -v                 Display version',
+        '  readmi --update           Update to latest version',
+        '  readmi -h                 Display help',
         '',
-        '✨ Visit: https://github.com/yourusername/readmi'
+        '✨ Visit: https://github.com/jayanithu/readmi'
       ].join('\n')),
       { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'blue' }
     ));
@@ -160,9 +200,71 @@ class ReadmeGenerator {
     
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      
+      // Preferred models in order of preference
+      const preferredModels = [
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-pro",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
+        "gemini-pro",
+        "gemini-1.0-pro"
+      ];
+      
+      // Try models in sequence until one works
+      let selectedModel = null;
+      let workingModel = null;
 
-      const prompt = `Create a modern README.md for ${projectInfo.name}:
+      for (const modelName of preferredModels) {
+        try {
+          const tempModel = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: {
+              temperature: modelName.includes('flash') ? 0.9 : 0.7,
+              maxOutputTokens: modelName.includes('pro') ? 2048 : 1024,
+              topP: modelName.includes('flash') ? 0.9 : 0.8,
+              topK: modelName.includes('pro') ? 40 : 32,
+            }
+          });
+
+          // Test if the model works
+          await tempModel.generateContent([{ text: "test" }]);
+          workingModel = tempModel;
+          selectedModel = modelName;
+          this.spinner.info(chalk.blue(`Found working model: ${modelName}`));
+          break;
+        } catch (error) {
+          this.spinner.warn(chalk.yellow(`Model ${modelName} not available, trying next...`));
+          continue;
+        }
+      }
+
+      if (!workingModel || !selectedModel) {
+        // Fallback to basic gemini-pro
+        workingModel = genAI.getGenerativeModel({
+          model: "gemini-pro",
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+            topP: 0.8,
+            topK: 32,
+          }
+        });
+      }
+
+      // Show model capabilities
+      const modelType = selectedModel.toLowerCase();
+      if (modelType.includes('2.0')) {
+        this.spinner.info(chalk.green('✨ Using Gemini 2.0 with enhanced capabilities'));
+      } else if (modelType.includes('1.5')) {
+        this.spinner.info(chalk.green('✨ Using Gemini 1.5 with improved performance'));
+      } else if (modelType.includes('flash')) {
+        this.spinner.info(chalk.green('⚡ Using Flash model for faster generation'));
+      }
+
+      // Create the prompt based on project info
+      const promptText = `Create a modern README.md for ${projectInfo.name}:
 
 Project Details:
 ${JSON.stringify(projectInfo, null, 2)}
@@ -227,44 +329,115 @@ Important:
 - Include working examples
 - Keep it modern and clean
 - Add relevant badges
-- Make it easy to navigate`;
+- Make it easy to navigate
 
-      const result = await model.generateContent(prompt);
-      const readmeContent = result.response.text();
-      
-      // Post-process to ensure emojis are preserved
-      const processedContent = this.postProcessReadme(readmeContent, projectInfo);
-      
-      await fs.writeFile('README.md', processedContent);
-      this.spinner.succeed(chalk.green('✨ README.md generated successfully!'));
+Please provide the content in markdown format.`;
+
+      try {
+        const result = await workingModel.generateContent([
+          { text: promptText }
+        ]);
+
+        const response = await result.response;
+        const readmeContent = response.text();
+        
+        if (!readmeContent) {
+          throw new Error('Generated content is empty');
+        }
+        
+        // Post-process to ensure emojis are preserved
+        const processedContent = this.postProcessReadme(readmeContent, projectInfo);
+        
+        await fs.writeFile('README.md', processedContent);
+        this.spinner.succeed(chalk.green('✨ README.md generated successfully!'));
+      } catch (genError) {
+        // Try with simpler prompt if the detailed one fails
+        try {
+          const fallbackPrompt = `Create a simple README for ${projectInfo.name} with these sections:
+1. Project Description
+2. Installation (npm install ${projectInfo.name})
+3. Basic Usage
+4. License
+
+Keep it simple and clear, use markdown format.`;
+
+          const fallbackResult = await workingModel.generateContent([
+            { text: fallbackPrompt }
+          ]);
+
+          const fallbackResponse = await fallbackResult.response;
+          const fallbackContent = fallbackResponse.text();
+
+          if (!fallbackContent) {
+            throw new Error('Generated content is empty');
+          }
+
+          const processedContent = this.postProcessReadme(fallbackContent, projectInfo);
+          await fs.writeFile('README.md', processedContent);
+          this.spinner.succeed(chalk.yellow('✨ README.md generated with minimal content (fallback mode)'));
+        } catch (fallbackError) {
+          throw new Error(`Failed to generate content: ${fallbackError.message}`);
+        }
+      }
     } catch (error) {
+      if (error.message.includes('not found for API version')) {
+        throw new Error('API configuration error. Please check your API key and try again. Error: ' + error.message);
+      }
       throw new Error(`README generation failed: ${error.message}`);
     }
   }
 
   postProcessReadme(content, projectInfo) {
-    // Add badges with emojis
-    const badges = [
-      `![Version](https://img.shields.io/badge/version-${projectInfo.version}-blue)`,
-      '![License](https://img.shields.io/badge/license-MIT-green)',
-      projectInfo.hasTests && '![Tests](https://img.shields.io/badge/tests-passing-brightgreen)',
-      projectInfo.hasDocker && '![Docker](https://img.shields.io/badge/docker-ready-blue)',
-      '![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)'
-    ].filter(Boolean);
+    // NPM and status badges
+    const npmBadges = [
+      `[![npm version](https://img.shields.io/npm/v/@jayanithu/readmi)](https://www.npmjs.com/package/@jayanithu/readmi)`,
+      `[![npm downloads](https://img.shields.io/npm/dm/@jayanithu/readmi)](https://www.npmjs.com/package/@jayanithu/readmi)`,
+      `[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)`
+    ];
 
-    // Add badges and enhance formatting
-    let enhancedContent = `${badges.join(' ')}\n\n${content}`;
+    // Create header with rocket emoji and description
+    let enhancedContent = `# 🚀 @jayanithu/readmi: Modern README Generator Powered by AI\n\n`;
+    enhancedContent += `${npmBadges.join('\n')}\n\n`;
+    enhancedContent += `⚡ Generate stunning README files effortlessly with AI!\n\n`;
 
-    // Ensure emojis are preserved and formatting is clean
-    enhancedContent = enhancedContent
-      .replace(/\n(#+\s)/g, '\n\n$1')
-      .replace(/\n##\s/g, '\n\n---\n\n## ')
-      .replace(/```(\w+)\n/g, '```$1\n')
-      .replace(/\n-\s/g, '\n- ')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim() + '\n';
+    // Add the rest of the content
+    enhancedContent += content
+      .replace(/^# .*$/m, '') // Remove the original title if present
+      .replace(/\n(#+)\s/g, '\n\n$1 ')  // Add spacing around headers
+      .replace(/```(\w+)\n/g, '```$1\n') // Preserve code block language tags
+      .replace(/\n-\s/g, '\n• ') // Use bullet points instead of dashes
+      .replace(/\n{3,}/g, '\n\n') // Remove excessive newlines
+      .replace(/(\n\n---\n\n)/g, '\n\n---\n\n') // Clean horizontal rules
+      .trim();
+
+    // Add footer
+    enhancedContent += '\n\n---\n\n_Made with ❤️ using ReadMI_\n';
 
     return enhancedContent;
+  }
+
+  async handleConfig() {
+    if (args[1] === '--remove-key' || args[1] === '-r') {
+      if (config.has('apiKey')) {
+        config.delete('apiKey');
+        console.log(chalk.green('✅ API key removed successfully'));
+      } else {
+        console.log(chalk.yellow('ℹ️ No API key found in configuration'));
+      }
+      return;
+    }
+
+    console.log('\n' + boxen(
+      gradient.pastel.multiline([
+        '⚙️ Configuration Commands:',
+        '',
+        '  readmi config -r          Remove saved API key',
+        '',
+        '📝 Current Configuration:',
+        `  API Key: ${config.has('apiKey') ? '🔑 Saved' : '❌ Not saved'}`
+      ].join('\n')),
+      { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'magenta' }
+    ));
   }
 
   handleError(error) {
