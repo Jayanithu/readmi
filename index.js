@@ -18,7 +18,11 @@ const args = process.argv.slice(2);
 
 const config = new Conf({
   projectName: 'readmi',
-  defaults: { apiKey: null }
+  defaults: { 
+    apiKey: null,
+    preferredModel: null,
+    preferredLanguage: 'en'
+  }
 });
 
 async function analyzeProject(dir) {
@@ -89,11 +93,22 @@ class ReadmeGenerator {
         await this.handleConfig();
         return;
       }
+      
+      if (args[0] === 'language' || args[0] === 'lang') {
+        await this.selectLanguage();
+        return;
+      }
 
       this.spinner.start(chalk.blue('Initializing ReadMI...'));
       const apiKey = await this.getApiKey();
       const projectInfo = await analyzeProject(this.currentDir);
-      await this.generateReadme(apiKey, projectInfo);
+      
+      let language = config.get('preferredLanguage') || 'en';
+      if (args.includes('--select-language') || args.includes('-sl')) {
+        language = await this.selectLanguage();
+      }
+      
+      await this.generateReadme(apiKey, projectInfo, language);
     } catch (error) {
       this.handleError(error);
     }
@@ -137,7 +152,7 @@ class ReadmeGenerator {
               '╭─────────────────────────────╮',
               '│                             │',
               '│   ReadMI - README Builder   │',
-              '│         v2.2.2              │',
+              '│         v2.3.0              │',
               '│                             │',
               '╰─────────────────────────────╯'
             ].join('\n')
@@ -148,7 +163,7 @@ class ReadmeGenerator {
   }
 
   showVersion() {
-    console.log(chalk.cyan('ReadMI v2.2.2'));
+    console.log(chalk.cyan('ReadMI v2.3.0'));
     process.exit(0);
   }
 
@@ -164,6 +179,9 @@ class ReadmeGenerator {
               '  readmi models             List available AI models',
               '  readmi config             Manage configuration',
               '  readmi config -r          Remove saved API key',
+              '  readmi config -rm         Remove preferred model',
+              '  readmi config -rl         Remove preferred language',
+              '  readmi config -l          Set preferred language',
               '  readmi -v                 Display version',
               '  readmi --update           Update to latest version',
               '  readmi -h                 Display help',
@@ -204,7 +222,7 @@ class ReadmeGenerator {
     return apiKey;
   }
 
-  async generateReadme(apiKey, projectInfo) {
+  async generateReadme(apiKey, projectInfo, language = 'en') {
     this.spinner.start(chalk.blue('Analyzing project...'));
 
     try {
@@ -264,9 +282,10 @@ class ReadmeGenerator {
         this.spinner.info(chalk.green('⚡ Using Flash model for faster generation'));
       }
 
-      // Updated prompt to include Bun instructions and emphasize clarity
-      const promptText = `Create a modern, precise, and clean README.md for ${projectInfo.name}. 
-The README should support installation via both npm and Bun. 
+      this.spinner.info(chalk.blue(`Generating README in ${this.getLanguageName(language)}`));
+
+      const promptText = `Create a modern, precise, and clean README.md for ${projectInfo.name} in ${this.getLanguageName(language)}. 
+The README should support installation via both npm and Bun.
 
 Project Details:
 ${JSON.stringify(projectInfo, null, 2)}
@@ -336,6 +355,7 @@ Important:
 - Keep it modern and clean
 - Add relevant badges
 - Make it easy to navigate
+- Write the entire README in ${this.getLanguageName(language)}
 
 Please provide the content in markdown format.`;
 
@@ -349,37 +369,21 @@ Please provide the content in markdown format.`;
         }
 
         const processedContent = this.postProcessReadme(readmeContent);
-        await fs.writeFile('README.md', processedContent);
-        this.spinner.succeed(chalk.green('✨ README.md generated successfully!'));
-      } catch (genError) {
-        try {
-          const fallbackPrompt = `Create a simple README for ${projectInfo.name} with these sections:
-1. Project Description
-2. Installation (npm and bun)
-3. Basic Usage
-4. License
-
-Keep it simple, precise, and clear. Use markdown format.`;
-          const fallbackResult = await workingModel.generateContent([{ text: fallbackPrompt }]);
-          const fallbackResponse = await fallbackResult.response;
-          const fallbackContent = fallbackResponse.text();
-
-          if (!fallbackContent) {
-            throw new Error('Generated content is empty');
-          }
-
-          const processedContent = this.postProcessReadme(fallbackContent);
-          await fs.writeFile('README.md', processedContent);
-          this.spinner.succeed(chalk.yellow('✨ README.md generated with minimal content (fallback mode)'));
-        } catch (fallbackError) {
-          throw new Error(`Failed to generate content: ${fallbackError.message}`);
+        let filename = 'README.md';
+        if (language !== 'en') {
+          filename = `README.${language}.md`;
         }
+        
+        await fs.writeFile(filename, processedContent);
+        this.spinner.succeed(chalk.green(`✨ ${filename} generated successfully in ${this.getLanguageName(language)}!`));
+      } catch (error) {
+        if (error.message.includes('not found for API version')) {
+          throw new Error('API configuration error. Please check your API key and try again. Error: ' + error.message);
+        }
+        throw new Error(`README generation failed: ${error.message}`);
       }
     } catch (error) {
-      if (error.message.includes('not found for API version')) {
-        throw new Error('API configuration error. Please check your API key and try again. Error: ' + error.message);
-      }
-      throw new Error(`README generation failed: ${error.message}`);
+      throw error;
     }
   }
 
@@ -394,12 +398,12 @@ Keep it simple, precise, and clear. Use markdown format.`;
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
-    // Append a friendly footer
     processed += '\n\n---\n_Made with ❤️ using ReadMI by jayanithu_\n';
     return processed;
   }
 
   async handleConfig() {
+
     if (args[1] === '--remove-key' || args[1] === '-r') {
       if (config.has('apiKey')) {
         config.delete('apiKey');
@@ -407,6 +411,28 @@ Keep it simple, precise, and clear. Use markdown format.`;
       } else {
         console.log(chalk.yellow('ℹ️ No API key found in configuration'));
       }
+      return;
+    }
+    if (args[1] === '--remove-model' || args[1] === '-rm') {
+      if (config.has('preferredModel')) {
+        config.delete('preferredModel');
+        console.log(chalk.green('✅ Preferred model removed successfully'));
+      } else {
+        console.log(chalk.yellow('ℹ️ No preferred model found in configuration'));
+      }
+      return;
+    }
+    if (args[1] === '--remove-language' || args[1] === '-rl') {
+      if (config.has('preferredLanguage')) {
+        config.delete('preferredLanguage');
+        console.log(chalk.green('✅ Preferred language removed successfully'));
+      } else {
+        console.log(chalk.yellow('ℹ️ No preferred language found in configuration'));
+      }
+      return;
+    }
+    if (args[1] === '--language' || args[1] === '-l') {
+      await this.selectLanguage();
       return;
     }
     console.log(
@@ -417,9 +443,14 @@ Keep it simple, precise, and clear. Use markdown format.`;
               '⚙️ Configuration Commands:',
               '',
               '  readmi config -r          Remove saved API key',
+              '  readmi config -rm         Remove preferred model',
+              '  readmi config -rl         Remove preferred language',
+              '  readmi config -l          Set preferred language',
               '',
               '📝 Current Configuration:',
-              `  API Key: ${config.has('apiKey') ? '🔑 Saved' : '❌ Not saved'}`
+              `  API Key: ${config.has('apiKey') ? '🔑 Saved' : '❌ Not saved'}`,
+              `  Preferred Model: ${config.has('preferredModel') ? chalk.cyan(config.get('preferredModel')) : '❌ Not set'}`,
+              `  Preferred Language: ${config.has('preferredLanguage') ? chalk.cyan(this.getLanguageName(config.get('preferredLanguage'))) : '❌ Not set'}`
             ].join('\n')
           ),
           { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'magenta' }
@@ -427,9 +458,69 @@ Keep it simple, precise, and clear. Use markdown format.`;
     );
   }
 
+  getLanguageName(code) {
+    const languageMap = {
+      'en': 'English',
+      'es': 'Spanish (Español)',
+      'fr': 'French (Français)',
+      'de': 'German (Deutsch)',
+      'zh': 'Chinese (中文)',
+      'ja': 'Japanese (日本語)',
+      'pt': 'Portuguese (Português)',
+      'ru': 'Russian (Русский)',
+      'hi': 'Hindi (हिन्दी)',
+      'ar': 'Arabic (العربية)'
+    };
+    return languageMap[code] || code;
+  }
+
   handleError(error) {
     this.spinner.fail(chalk.red('Error: ') + error.message);
     process.exit(1);
+  }
+
+  async selectLanguage() {
+    const savedLanguage = config.get('preferredLanguage');
+    
+    const languages = [
+      { name: 'English', value: 'en' },
+      { name: 'Spanish (Español)', value: 'es' },
+      { name: 'French (Français)', value: 'fr' },
+      { name: 'German (Deutsch)', value: 'de' },
+      { name: 'Chinese (中文)', value: 'zh' },
+      { name: 'Japanese (日本語)', value: 'ja' },
+      { name: 'Portuguese (Português)', value: 'pt' },
+      { name: 'Russian (Русский)', value: 'ru' },
+      { name: 'Hindi (हिन्दी)', value: 'hi' },
+      { name: 'Arabic (العربية)', value: 'ar' }
+    ];
+    
+    this.spinner.stop();
+    const { language } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'language',
+        message: chalk.cyan('Select README language:'),
+        choices: languages,
+        default: languages.findIndex(lang => lang.value === savedLanguage) || 0
+      }
+    ]);
+    
+    const { saveLanguage } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'saveLanguage',
+        message: chalk.cyan('Save this language as preferred?'),
+        default: true
+      }
+    ]);
+    
+    if (saveLanguage) {
+      config.set('preferredLanguage', language);
+      this.spinner.succeed(chalk.green(`Language preference saved: ${language}`));
+    }
+    
+    return language;
   }
 }
 
