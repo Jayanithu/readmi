@@ -152,7 +152,7 @@ class ReadmeGenerator {
               '╭─────────────────────────────╮',
               '│                             │',
               '│   ReadMI - README Builder   │',
-              '│         v2.3.1              │',
+              '│         v2.3.2              │',
               '│                             │',
               '╰─────────────────────────────╯'
             ].join('\n')
@@ -163,7 +163,7 @@ class ReadmeGenerator {
   }
 
   showVersion() {
-    console.log(chalk.cyan('ReadMI v2.3.1'));
+    console.log(chalk.cyan('ReadMI v2.3.2'));
     process.exit(0);
   }
 
@@ -284,95 +284,98 @@ class ReadmeGenerator {
 
       this.spinner.info(chalk.blue(`Generating README in ${this.getLanguageName(language)}`));
 
-      const promptText = `Create a modern, precise, and clean README.md for ${projectInfo.name} in ${this.getLanguageName(language)}. 
-The README should be comprehensive, accurate, and reflect the actual functionality of the project.
+      const projectType = this.determineProjectType(projectInfo);
+      
+      const promptText = `Create a comprehensive, accurate README.md for the project "${projectInfo.name}" in ${this.getLanguageName(language)}.
 
 Project Details:
 ${JSON.stringify(projectInfo, null, 2)}
 
 Project Type Analysis:
-- This is a ${projectInfo.name.includes('cli') || projectInfo.bin ? 'CLI tool' : 'library/package'}
-- Primary language: JavaScript/Node.js
-- Installation methods: npm and Bun
-${projectInfo.bin ? '- Has executable commands via CLI' : ''}
-${projectInfo.dependencies['@google/generative-ai'] ? '- Uses Google Generative AI' : ''}
+${projectType.join('\n')}
 
-Generate a README with these sections and emojis:
+Generate a README with these sections (adapt as needed for the specific project type):
 
 1. 🚀 Project Title and Description
-   - Project name: ${projectInfo.name}
-   - Description: ${projectInfo.description || 'A powerful tool for generating README files'}
-   - Include npm version badge, license badge, and maintenance badge
-   - One-line catchy description that accurately reflects the project's purpose
+   - Clear project name with appropriate badges (npm, license, build status, etc.)
+   - Concise description that explains the project's purpose
+   - If applicable: version information, status (beta, stable, etc.)
 
-2. ✨ Features (Based on actual functionality)
-   - 🎯 AI-powered README generation using Google's Gemini models
-   - 🔥 Support for multiple languages (${Object.keys(this.getLanguageMap()).length} languages available)
-   - ⚡ Smart project analysis to detect project structure
-   - 💪 Configuration management for API keys and preferences
-   - 🌈 Beautiful CLI interface with colors and animations
+2. ✨ Features
+   - List 4-6 key features with emoji prefixes
+   - Focus on what makes this project unique or valuable
+   - Highlight technical capabilities and user benefits
 
 3. 📦 Installation
-   - Global installation instructions for CLI tools
-   \`\`\`bash
-   npm install -g ${projectInfo.name}
-   \`\`\`
-   - Local installation if applicable
-   \`\`\`bash
-   npm install ${projectInfo.name}
-   # OR
-   bun install ${projectInfo.name}
-   \`\`\`
+   - Provide clear, step-by-step installation instructions
+   - Include all prerequisites and dependencies
+   - Show multiple installation methods if applicable (npm, yarn, bun, pip, etc.)
+   - Include platform-specific instructions if needed
 
-4. 🎮 Quick Start
-   - 🔑 Google AI API key setup instructions
-   - 📝 Basic usage examples
-   - 🎯 Command reference with examples
+4. 🎮 Quick Start / Usage
+   - Show a minimal working example to get started quickly
+   - Include code snippets with proper syntax highlighting
+   - Explain key configuration options or environment variables
+   - For APIs: show basic request/response examples
 
-5. 💻 Usage Examples
-   - 🌟 Basic README generation
-   - 🔥 Generating README in different languages
-   - 💡 Configuration management
-   - 🧩 Advanced usage patterns
+5. 📖 Documentation
+   - Link to or include API documentation if applicable
+   - Explain core concepts and architecture
+   - Provide examples for common use cases
+   - Include diagrams or screenshots if helpful
 
 6. ⚙️ Configuration
-   - 🛠️ Available configuration options
-   - 🎨 Language preferences
-   - 🔧 API key management
-   - 📋 Model selection (if applicable)
+   - Document all configuration options
+   - Explain default values and possible alternatives
+   - Show configuration file examples
+   - Explain environment variables
 
-${projectInfo.hasTests ? `7. 🧪 Testing
-   - 🎯 Running tests
-   - 📊 Coverage info
-   - 🐛 Debug tips
-` : ''}${projectInfo.hasDocker ? `8. 🐳 Docker Support
-   - 🏗️ Build instructions
-   - 🚀 Run commands
-   - 🔧 Configuration
-` : ''}9. 📝 License & Contributing
-   - 📄 MIT License information
-   - 🤝 How to contribute to the project
-   - 👥 Acknowledgments and contributors
+7. 🧪 Testing
+   - Instructions for running tests
+   - Explanation of test coverage
+   - How to write new tests
 
-Style Requirements:
-- Use emojis for all sections and key points
-- Keep content concise but informative
-- Add code blocks with language tags
-- Make it visually appealing
-- Use tables for structured data if beneficial
-- Provide clear instructions for both npm and Bun
+8. 🤝 Contributing
+   - Guidelines for contributors
+   - Code of conduct
+   - Development setup instructions
+   - Pull request process
 
-Important:
-- Focus on developer experience and ease of use
-- Include working examples with actual command syntax
-- Keep it modern and clean
-- Add relevant badges (npm, license, etc.)
-- Make it easy to navigate
-- Write the entire README in ${this.getLanguageName(language)}
-- Ensure all commands match the actual implementation in the code
-- Include a footer with "Made with ❤️ using ReadMI"
+9. 📝 License
+   - Specify the license type
+   - Link to the full license text
 
-Please provide the content in markdown format.`;
+10. 👏 Acknowledgements
+    - Credit contributors, inspirations, and dependencies
+    - Link to related projects
+
+Adapt the sections based on the project type:
+- For libraries/frameworks: Focus on API documentation, usage examples
+- For CLI tools: Focus on command reference, options, examples
+- For web applications: Include deployment instructions, screenshots
+- For mobile apps: Include store links, platform requirements
+- For data science projects: Include dataset information, model details
+- For games: Include controls, gameplay instructions
+
+Style Guidelines:
+- Use clear, concise language
+- Include relevant code examples with proper syntax highlighting
+- Use emojis for section headers to improve readability
+- Use tables for structured data when appropriate
+- Include badges for important information (build status, version, etc.)
+- Organize information hierarchically with proper heading levels
+- Ensure all links are functional and relevant
+- Include visuals (screenshots, diagrams) where they add value
+
+Technical Accuracy:
+- Ensure all command examples work as written
+- Verify all API examples are syntactically correct
+- Check that installation instructions are complete
+- Confirm compatibility information is accurate
+- Ensure version numbers are consistent throughout
+
+Write the entire README in ${this.getLanguageName(language)}.
+Format the output as clean markdown without any wrapper code blocks.`;
 
       try {
         const result = await workingModel.generateContent([{ text: promptText }]);
@@ -402,7 +405,82 @@ Please provide the content in markdown format.`;
     }
   }
 
-  // Helper method to get all language mappings
+  determineProjectType(projectInfo) {
+    const projectType = [];
+    
+    if (projectInfo.bin || Object.keys(projectInfo.bin || {}).length > 0) {
+      projectType.push('- This is a command-line interface (CLI) tool');
+    }
+    
+    else if (projectInfo.main) {
+      projectType.push('- This is a library/package meant to be imported by other projects');
+    }
+    
+    if (projectInfo.dependencies) {
+      if (projectInfo.dependencies.react) {
+        projectType.push('- This is a React application/component');
+      } else if (projectInfo.dependencies.vue) {
+        projectType.push('- This is a Vue.js application/component');
+      } else if (projectInfo.dependencies.express || projectInfo.dependencies['@nestjs/core']) {
+        projectType.push('- This is a Node.js backend/API service');
+      } else if (projectInfo.dependencies.electron) {
+        projectType.push('- This is an Electron desktop application');
+      } else if (projectInfo.dependencies['react-native']) {
+        projectType.push('- This is a React Native mobile application');
+      }
+    }
+    
+    if (projectInfo.devDependencies) {
+      const testingTools = [];
+      if (projectInfo.devDependencies.jest) testingTools.push('Jest');
+      if (projectInfo.devDependencies.mocha) testingTools.push('Mocha');
+      if (projectInfo.devDependencies.cypress) testingTools.push('Cypress');
+      if (projectInfo.devDependencies.playwright) testingTools.push('Playwright');
+      
+      if (testingTools.length > 0) {
+        projectType.push(`- Testing is done with: ${testingTools.join(', ')}`);
+      }
+    }
+    
+    if (projectInfo.hasDocker) {
+      projectType.push('- This project has Docker support');
+    }
+    
+    if (projectInfo.hasGithubActions) {
+      projectType.push('- This project uses GitHub Actions for CI/CD');
+    }
+    
+    const fileExtensions = projectInfo.files.map(file => {
+      const ext = file.split('.').pop();
+      return ext;
+    });
+    
+    if (fileExtensions.includes('py')) {
+      projectType.push('- This project uses Python');
+    } else if (fileExtensions.includes('go')) {
+      projectType.push('- This project uses Go');
+    } else if (fileExtensions.includes('rs')) {
+      projectType.push('- This project uses Rust');
+    } else if (fileExtensions.includes('java') || fileExtensions.includes('kt')) {
+      projectType.push('- This project uses Java/Kotlin');
+    } else if (fileExtensions.includes('rb')) {
+      projectType.push('- This project uses Ruby');
+    } else if (fileExtensions.includes('php')) {
+      projectType.push('- This project uses PHP');
+    } else if (fileExtensions.includes('ts') || fileExtensions.includes('tsx')) {
+      projectType.push('- This project uses TypeScript');
+    } else if (fileExtensions.includes('js') || fileExtensions.includes('jsx')) {
+      projectType.push('- This project uses JavaScript');
+    }
+    
+    if (projectType.length === 0) {
+      projectType.push('- Project type could not be automatically determined');
+      projectType.push('- Generating a generic README structure');
+    }
+    
+    return projectType;
+  }
+
   getLanguageMap() {
     return {
       'en': 'English',
