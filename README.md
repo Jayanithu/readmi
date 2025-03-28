@@ -8,13 +8,16 @@ A universal README generator for any programming project.
 
 ### 📖 Commands
 
-- `readmi`: Generate a new README
-- `readmi -v`: Display version
-- `readmi --update`: Update to latest version
-- `readmi -h`: Display help
+- `readmi`: Generate README
 - `readmi models`: List available AI models
 - `readmi config`: Manage configuration
 - `readmi config -r`: Remove saved API key
+- `readmi config -rm`: Remove preferred model
+- `readmi config -rl`: Remove preferred language
+- `readmi config -l`: Set preferred language
+- `readmi -v`: Display version
+- `readmi --update`: Update to latest version
+- `readmi -h`: Display help
 
 
 ### 💬 Contributing
