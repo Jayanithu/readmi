@@ -152,7 +152,7 @@ class ReadmeGenerator {
               '╭─────────────────────────────╮',
               '│                             │',
               '│   ReadMI - README Builder   │',
-              '│         v2.3.0              │',
+              '│         v2.3.1              │',
               '│                             │',
               '╰─────────────────────────────╯'
             ].join('\n')
@@ -163,7 +163,7 @@ class ReadmeGenerator {
   }
 
   showVersion() {
-    console.log(chalk.cyan('ReadMI v2.3.0'));
+    console.log(chalk.cyan('ReadMI v2.3.1'));
     process.exit(0);
   }
 
@@ -285,48 +285,61 @@ class ReadmeGenerator {
       this.spinner.info(chalk.blue(`Generating README in ${this.getLanguageName(language)}`));
 
       const promptText = `Create a modern, precise, and clean README.md for ${projectInfo.name} in ${this.getLanguageName(language)}. 
-The README should support installation via both npm and Bun.
+The README should be comprehensive, accurate, and reflect the actual functionality of the project.
 
 Project Details:
 ${JSON.stringify(projectInfo, null, 2)}
 
+Project Type Analysis:
+- This is a ${projectInfo.name.includes('cli') || projectInfo.bin ? 'CLI tool' : 'library/package'}
+- Primary language: JavaScript/Node.js
+- Installation methods: npm and Bun
+${projectInfo.bin ? '- Has executable commands via CLI' : ''}
+${projectInfo.dependencies['@google/generative-ai'] ? '- Uses Google Generative AI' : ''}
+
 Generate a README with these sections and emojis:
 
-1. 🚀 Project Title
-   - Clear project name with badges
-   - One-line catchy description
-   - Status badges
+1. 🚀 Project Title and Description
+   - Project name: ${projectInfo.name}
+   - Description: ${projectInfo.description || 'A powerful tool for generating README files'}
+   - Include npm version badge, license badge, and maintenance badge
+   - One-line catchy description that accurately reflects the project's purpose
 
-2. ✨ Features
-   - 🎯 Core feature one
-   - 🔥 Core feature two
-   - ⚡ Core feature three
-   - 💪 Core feature four
+2. ✨ Features (Based on actual functionality)
+   - 🎯 AI-powered README generation using Google's Gemini models
+   - 🔥 Support for multiple languages (${Object.keys(this.getLanguageMap()).length} languages available)
+   - ⚡ Smart project analysis to detect project structure
+   - 💪 Configuration management for API keys and preferences
+   - 🌈 Beautiful CLI interface with colors and animations
 
 3. 📦 Installation
-   - Show how to install with npm
+   - Global installation instructions for CLI tools
+   \`\`\`bash
+   npm install -g ${projectInfo.name}
+   \`\`\`
+   - Local installation if applicable
    \`\`\`bash
    npm install ${projectInfo.name}
-   \`\`\`
-   - Show how to install with Bun
-   \`\`\`bash
+   # OR
    bun install ${projectInfo.name}
    \`\`\`
 
 4. 🎮 Quick Start
-   - 🔑 API key setup (if needed)
-   - 📝 Basic configuration
-   - 🎯 First command
+   - 🔑 Google AI API key setup instructions
+   - 📝 Basic usage examples
+   - 🎯 Command reference with examples
 
 5. 💻 Usage Examples
-   - 🌟 Basic usage
-   - 🔥 Advanced features
-   - 💡 Tips and tricks
+   - 🌟 Basic README generation
+   - 🔥 Generating README in different languages
+   - 💡 Configuration management
+   - 🧩 Advanced usage patterns
 
 6. ⚙️ Configuration
-   - 🛠️ Available options
-   - 🎨 Customization
-   - 🔧 Advanced settings
+   - 🛠️ Available configuration options
+   - 🎨 Language preferences
+   - 🔧 API key management
+   - 📋 Model selection (if applicable)
 
 ${projectInfo.hasTests ? `7. 🧪 Testing
    - 🎯 Running tests
@@ -337,9 +350,9 @@ ${projectInfo.hasTests ? `7. 🧪 Testing
    - 🚀 Run commands
    - 🔧 Configuration
 ` : ''}9. 📝 License & Contributing
-   - 📄 License info
-   - 🤝 How to contribute
-   - 👥 Contributors
+   - 📄 MIT License information
+   - 🤝 How to contribute to the project
+   - 👥 Acknowledgments and contributors
 
 Style Requirements:
 - Use emojis for all sections and key points
@@ -350,12 +363,14 @@ Style Requirements:
 - Provide clear instructions for both npm and Bun
 
 Important:
-- Focus on developer experience
-- Include working examples
+- Focus on developer experience and ease of use
+- Include working examples with actual command syntax
 - Keep it modern and clean
-- Add relevant badges
+- Add relevant badges (npm, license, etc.)
 - Make it easy to navigate
 - Write the entire README in ${this.getLanguageName(language)}
+- Ensure all commands match the actual implementation in the code
+- Include a footer with "Made with ❤️ using ReadMI"
 
 Please provide the content in markdown format.`;
 
@@ -385,6 +400,26 @@ Please provide the content in markdown format.`;
     } catch (error) {
       throw error;
     }
+  }
+
+  // Helper method to get all language mappings
+  getLanguageMap() {
+    return {
+      'en': 'English',
+      'es': 'Spanish (Español)',
+      'fr': 'French (Français)',
+      'de': 'German (Deutsch)',
+      'zh': 'Chinese (中文)',
+      'ja': 'Japanese (日本語)',
+      'pt': 'Portuguese (Português)',
+      'ru': 'Russian (Русский)',
+      'hi': 'Hindi (हिन्दी)',
+      'ar': 'Arabic (العربية)'
+    };
+  }
+
+  getLanguageName(code) {
+    return this.getLanguageMap()[code] || code;
   }
 
   postProcessReadme(content) {
