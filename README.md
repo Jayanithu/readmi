@@ -77,14 +77,6 @@ Or use the short form:
 readmi -sl
 ```
 
-### List Available AI Models
-
-View all available Gemini models:
-
-```bash
-readmi models
-```
-
 ### Configuration
 
 #### View Configuration
@@ -97,6 +89,14 @@ readmi config
 
 ```bash
 readmi config -l
+```
+
+#### Select Preferred Model
+
+Choose your preferred AI model:
+
+```bash
+readmi config model
 ```
 
 #### Remove Saved API Key
@@ -124,7 +124,6 @@ readmi config -rl
 | Command | Description |
 |---------|-------------|
 | `readmi` | Generate README for current project |
-| `readmi models` | List available AI models |
 | `readmi config` | Manage configuration |
 
 ### Options
@@ -144,6 +143,7 @@ readmi config -rl
 | `readmi config -rm` | Remove preferred model |
 | `readmi config -rl` | Remove preferred language |
 | `readmi config -l` | Set preferred language |
+| `readmi config model` | Select preferred AI model |
 
 ## Supported Languages
 
@@ -202,7 +202,7 @@ If you encounter API key errors:
 If a model is not available:
 
 - ReadMI will automatically try the next available model
-- Check available models: `readmi models`
+- Select a different model: `readmi config model`
 - Ensure your API key has access to Gemini models
 
 ## Contributing
