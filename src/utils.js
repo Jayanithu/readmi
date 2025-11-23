@@ -1,6 +1,4 @@
 import chalk from 'chalk';
-import boxen from 'boxen';
-import gradient from 'gradient-string';
 
 export function showHeader() {
   console.log(
@@ -26,7 +24,6 @@ export function showHelp() {
     chalk.bold('  Commands\n') +
     '\n' +
     chalk.cyan('  readmi') + chalk.gray('                    Generate README\n') +
-    chalk.cyan('  readmi models') + chalk.gray('             List AI models\n') +
     chalk.cyan('  readmi config') + chalk.gray('             Manage configuration\n') +
     '\n' +
     chalk.bold('  Options\n') +
@@ -42,6 +39,7 @@ export function showHelp() {
     chalk.gray('  config -rm') + chalk.gray('               Remove model\n') +
     chalk.gray('  config -rl') + chalk.gray('               Remove language\n') +
     chalk.gray('  config -l') + chalk.gray('                Set language\n') +
+    chalk.gray('  config model') + chalk.gray('             Select model\n') +
     '\n' +
     chalk.gray('  https://github.com/jayanithu/readmi\n')
   );

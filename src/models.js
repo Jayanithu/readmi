@@ -1,25 +1,59 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import chalk from 'chalk';
 import ora from 'ora';
-import boxen from 'boxen';
-import gradient from 'gradient-string';
+import inquirer from 'inquirer';
+import { config } from './config.js';
+
+export const AVAILABLE_MODELS = [
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash-8b',
+  'gemini-1.5-flash-8b-latest',
+  'gemini-1.5-pro',
+  'gemini-1.5-pro-latest',
+  'gemini-2.0-flash-001',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-2.5-flash-preview-04-17',
+  'gemini-2.5-pro-preview-05-06'
+];
 
 export async function selectModel(apiKey, spinner) {
   const genAI = new GoogleGenerativeAI(apiKey);
+  
+  const savedModel = config.get('preferredModel');
+  if (savedModel && AVAILABLE_MODELS.includes(savedModel)) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: savedModel,
+        generationConfig: {
+          temperature: savedModel.includes('flash') ? 0.8 : 0.7,
+          maxOutputTokens: savedModel.includes('pro') ? 4096 : 2048,
+          topP: savedModel.includes('flash') ? 0.9 : 0.8,
+          topK: savedModel.includes('pro') ? 40 : 32
+        }
+      });
+      await model.generateContent([{ text: 'test' }]);
+      spinner.succeed(chalk.green(`  Using ${chalk.bold(savedModel)}`));
+      return model;
+    } catch (error) {
+      spinner.warn(chalk.gray(`  Saved model ${savedModel} not available, trying defaults...`));
+    }
+  }
+  
   const preferredModels = [
     'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-pro',
     'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-    'gemini-pro',
-    'gemini-1.0-pro'
+    'gemini-1.5-pro',
+    'gemini-1.5-flash-8b'
   ];
   
   let selectedModel = null;
   let workingModel = null;
 
   for (const modelName of preferredModels) {
+    if (!AVAILABLE_MODELS.includes(modelName)) continue;
+    
     try {
       const tempModel = genAI.getGenerativeModel({
         model: modelName,
@@ -43,55 +77,67 @@ export async function selectModel(apiKey, spinner) {
 
   if (!workingModel || !selectedModel) {
     workingModel = genAI.getGenerativeModel({
-      model: 'gemini-pro',
+      model: 'gemini-1.5-flash',
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.8,
         maxOutputTokens: 2048,
-        topP: 0.8,
+        topP: 0.9,
         topK: 32
       }
     });
+    selectedModel = 'gemini-1.5-flash';
   }
 
   const modelType = selectedModel?.toLowerCase() || '';
-  if (modelType.includes('2.0')) {
+  if (modelType.includes('2.5')) {
+    spinner.info(chalk.gray('  Using Gemini 2.5'));
+  } else if (modelType.includes('2.0')) {
     spinner.info(chalk.gray('  Using Gemini 2.0'));
   } else if (modelType.includes('1.5')) {
     spinner.info(chalk.gray('  Using Gemini 1.5'));
-  } else if (modelType.includes('flash')) {
-    spinner.info(chalk.gray('  Using Flash model'));
   }
 
   return workingModel;
 }
 
-export async function listAvailableModels(apiKey) {
-  const spinner = ora({
-    text: chalk.gray('  Fetching models...'),
-    spinner: 'dots'
-  }).start();
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelList = await genAI.listModels();
-    spinner.succeed(chalk.green('  Models fetched'));
-    
-    const models = modelList.models.map(
-      (model, index) =>
-        chalk.cyan(`  ${String(index + 1).padStart(2, ' ')}. ${model.name}`) +
-        (model.description ? `\n     ${chalk.gray(model.description)}` : chalk.gray('\n     No description'))
-    ).join('\n\n');
-    
-    console.log(
-      '\n' +
-      chalk.bold('  Available Models\n') +
-      '\n' +
-      models +
-      '\n' +
-      chalk.gray(`  Total: ${modelList.models.length} models\n`)
-    );
-  } catch (error) {
-    spinner.fail(chalk.red('  Failed: ') + error.message);
-    process.exit(1);
+export async function chooseModel(spinner) {
+  const savedModel = config.get('preferredModel');
+  
+  spinner.stop();
+  console.log(chalk.gray('\n  Model Selection\n'));
+  
+  const { model } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'model',
+      message: chalk.cyan('  Select a model:'),
+      choices: AVAILABLE_MODELS.map(m => ({
+        name: m,
+        value: m
+      })),
+      default: savedModel && AVAILABLE_MODELS.includes(savedModel) 
+        ? AVAILABLE_MODELS.indexOf(savedModel) 
+        : AVAILABLE_MODELS.indexOf('gemini-2.0-flash'),
+      pageSize: 12
+    }
+  ]);
+  
+  const { saveModel } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'saveModel',
+      message: chalk.gray('  Save as preferred model?'),
+      default: true
+    }
+  ]);
+  
+  if (saveModel) {
+    config.set('preferredModel', model);
+    spinner.succeed(chalk.green(`  Model saved: ${model}`));
+  } else {
+    spinner.succeed(chalk.green(`  Selected: ${model}`));
   }
+  
+  return model;
 }
 

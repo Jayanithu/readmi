@@ -1,8 +1,6 @@
 import Conf from 'conf';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import boxen from 'boxen';
-import gradient from 'gradient-string';
 import { getLanguageName } from './utils.js';
 
 export const config = new Conf({
@@ -94,7 +92,7 @@ export async function selectLanguage(spinner) {
   return language;
 }
 
-export function handleConfig(args) {
+export async function handleConfig(args, spinner) {
   if (args[1] === '--remove-key' || args[1] === '-r') {
     if (config.has('apiKey')) {
       config.delete('apiKey');
@@ -125,6 +123,9 @@ export function handleConfig(args) {
   if (args[1] === '--language' || args[1] === '-l') {
     return 'select-language';
   }
+  if (args[1] === 'model' || args[1] === 'models') {
+    return 'select-model';
+  }
   
   const apiKeyStatus = config.has('apiKey') ? chalk.green('saved') : chalk.gray('not set');
   const modelStatus = config.has('preferredModel') ? chalk.cyan(config.get('preferredModel')) : chalk.gray('not set');
@@ -140,6 +141,7 @@ export function handleConfig(args) {
     chalk.gray('  config -rm') + chalk.gray('               Remove model\n') +
     chalk.gray('  config -rl') + chalk.gray('               Remove language\n') +
     chalk.gray('  config -l') + chalk.gray('                Set language\n') +
+    chalk.gray('  config model') + chalk.gray('             Select model\n') +
     '\n' +
     chalk.bold('  Current\n') +
     '\n' +

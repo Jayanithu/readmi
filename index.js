@@ -1,11 +1,10 @@
 #!/usr/bin/env node
-import fs from 'fs/promises';
 import chalk from 'chalk';
 import ora from 'ora';
 import { execSync } from 'child_process';
 import { analyzeProject } from './src/analyzer.js';
 import { generateReadme } from './src/generator.js';
-import { selectModel, listAvailableModels } from './src/models.js';
+import { selectModel, chooseModel } from './src/models.js';
 import { config, getApiKey, selectLanguage, handleConfig } from './src/config.js';
 import { showHeader, showVersion, showHelp } from './src/utils.js';
 
@@ -43,16 +42,12 @@ class ReadmeGenerator {
         return;
       }
 
-      if (args[0] === 'models') {
-        const apiKey = await getApiKey(this.spinner);
-        await listAvailableModels(apiKey);
-        return;
-      }
-
       if (args[0] === 'config') {
-        const result = handleConfig(args);
+        const result = await handleConfig(args, this.spinner);
         if (result === 'select-language') {
           await selectLanguage(this.spinner);
+        } else if (result === 'select-model') {
+          await chooseModel(this.spinner);
         }
         return;
       }
