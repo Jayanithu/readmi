@@ -5,7 +5,7 @@ import gradient from 'gradient-string';
 export function showHeader() {
   console.log(
     '\n' +
-    chalk.bold.cyan('  ReadMI') + chalk.gray(' v2.4.2') + '\n' +
+    chalk.bold.cyan('  ReadMI') + chalk.gray(' v2.4.3') + '\n' +
     chalk.gray('  AI-powered README generator') + '\n' +
     chalk.gray('  Run ') + chalk.cyan('readmi -h') + chalk.gray(' for help\n')
   );
@@ -14,7 +14,7 @@ export function showHeader() {
 export function showVersion() {
   console.log(
     '\n' +
-    chalk.bold.cyan('ReadMI') + ' v2.4.2\n' +
+    chalk.bold.cyan('ReadMI') + ' v2.4.3\n' +
     chalk.gray('Modern README generator powered by AI\n')
   );
   process.exit(0);
