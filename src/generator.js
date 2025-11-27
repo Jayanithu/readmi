@@ -223,6 +223,11 @@ export async function generateReadme(apiKey, projectInfo, language, model, spinn
     console.log(
       chalk.gray(`  ${lineCount} lines • ${fileSizeKB} KB • ${getLanguageName(language)}`) + '\n'
     );
+    console.log(
+      chalk.cyan('  ✨ Pro tip: ') +
+      chalk.gray('Double-check your README at ') +
+      chalk.blue.underline('https://readmi.jayanithu.dev/editor') + '\n'
+    );
   } catch (error) {
     if (error.message.includes('not found for API version')) {
       throw new Error('API configuration error. Please check your API key and try again. Error: ' + error.message);
