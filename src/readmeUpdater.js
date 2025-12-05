@@ -1,16 +1,10 @@
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
-/**
- * Analyzes an existing README to detect its structure and sections
- */
+// Analyzes existing README structure and sections
 export async function analyzeExistingReadme(filePath = 'README.md') {
-  if (!existsSync(filePath)) {
-    return null;
-  }
-
+  if (!existsSync(filePath)) return null;
   const content = await fs.readFile(filePath, 'utf-8');
-  
   return {
     exists: true,
     content,
@@ -21,9 +15,7 @@ export async function analyzeExistingReadme(filePath = 'README.md') {
   };
 }
 
-/**
- * Extract all markdown sections from README
- */
+// Extract markdown sections
 function extractSections(content) {
   const sections = [];
   const lines = content.split('\n');
@@ -42,7 +34,6 @@ function extractSections(content) {
           endLine: i - 1
         });
       }
-      
       currentSection = {
         level: headerMatch[1].length,
         title: headerMatch[2].trim(),
@@ -66,43 +57,27 @@ function extractSections(content) {
   return sections;
 }
 
-/**
- * Extract metadata like badges, version numbers, and links
- */
+// Extract metadata (badges, version, links)
 function extractMetadata(content) {
-  const metadata = {
-    badges: [],
-    version: null,
-    links: [],
-    hasTableOfContents: false
-  };
-  
+  const metadata = { badges: [], version: null, links: [], hasTableOfContents: false };
   const badgeRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   let match;
   while ((match = badgeRegex.exec(content)) !== null) {
     metadata.badges.push({ alt: match[1], url: match[2] });
   }
-  
   const versionMatch = content.match(/version[:\s]+(\d+\.\d+\.\d+)/i) || content.match(/v(\d+\.\d+\.\d+)/);
-  if (versionMatch) {
-    metadata.version = versionMatch[1];
-  }
-  
+  if (versionMatch) metadata.version = versionMatch[1];
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   while ((match = linkRegex.exec(content)) !== null) {
     if (match[2].startsWith('http') || match[2].startsWith('#')) {
       metadata.links.push({ text: match[1], url: match[2] });
     }
   }
-  
   metadata.hasTableOfContents = /##?\s+Table of Contents/i.test(content);
-  
   return metadata;
 }
 
-/**
- * Identify sections that appear to be custom (not standard README sections)
- */
+// Identify custom (non-standard) sections
 function identifyCustomSections(content) {
   const standardSections = [
     'installation', 'install', 'getting started', 'usage', 'features',
@@ -110,16 +85,13 @@ function identifyCustomSections(content) {
     'examples', 'api', 'configuration', 'testing', 'deployment', 'support',
     'changelog', 'roadmap', 'acknowledgments', 'authors', 'faq', 'troubleshooting'
   ];
-  
   const sections = extractSections(content);
   const customSections = [];
-  
   for (const section of sections) {
     const normalizedTitle = section.title.toLowerCase();
     const isStandard = standardSections.some(std => 
       normalizedTitle.includes(std) || std.includes(normalizedTitle)
     );
-    
     if (!isStandard && section.level <= 2) {
       customSections.push({
         title: section.title,
@@ -129,16 +101,12 @@ function identifyCustomSections(content) {
       });
     }
   }
-  
   return customSections;
 }
 
-/**
- * Analyze the overall structure of the README
- */
+// Analyze README structure
 function analyzeStructure(content) {
   const lines = content.split('\n');
-  
   return {
     totalLines: lines.length,
     hasHeader: /^#\s+.+/.test(content),
@@ -151,15 +119,10 @@ function analyzeStructure(content) {
   };
 }
 
-/**
- * Compare project state with README to detect outdated information
- */
+// Detect outdated information
 export function detectOutdatedInfo(readmeAnalysis, projectInfo) {
   const issues = [];
-  
-  if (!readmeAnalysis || !readmeAnalysis.exists) {
-    return issues;
-  }
+  if (!readmeAnalysis || !readmeAnalysis.exists) return issues;
   
   if (readmeAnalysis.metadata.version && projectInfo.version) {
     if (readmeAnalysis.metadata.version !== projectInfo.version) {
@@ -192,7 +155,6 @@ export function detectOutdatedInfo(readmeAnalysis, projectInfo) {
   if (projectInfo.dependencies) {
     const depCount = Object.keys(projectInfo.dependencies).length;
     const depMention = readmeContent.match(/(\d+)\s+dependencies/i);
-    
     if (depMention && parseInt(depMention[1]) !== depCount) {
       issues.push({
         type: 'dependency-count',
@@ -203,64 +165,34 @@ export function detectOutdatedInfo(readmeAnalysis, projectInfo) {
       });
     }
   }
-  
   return issues;
 }
 
-/**
- * Determine which sections need updating
- */
+// Identify sections needing updates
 export function identifySectionsToUpdate(readmeAnalysis, projectInfo) {
-  if (!readmeAnalysis || !readmeAnalysis.exists) {
-    return [];
-  }
-  
+  if (!readmeAnalysis || !readmeAnalysis.exists) return [];
   const sectionsToUpdate = [];
   const sections = readmeAnalysis.sections.map(s => s.title.toLowerCase());
   
   if (sections.some(s => s.includes('install'))) {
-    sectionsToUpdate.push({
-      name: 'Installation',
-      reason: 'May need updates based on current dependencies',
-      priority: 'medium'
-    });
+    sectionsToUpdate.push({ name: 'Installation', reason: 'May need updates based on current dependencies', priority: 'medium' });
   }
-  
   if (sections.some(s => s.includes('feature'))) {
-    sectionsToUpdate.push({
-      name: 'Features',
-      reason: 'Project code may have evolved with new features',
-      priority: 'high'
-    });
+    sectionsToUpdate.push({ name: 'Features', reason: 'Project code may have evolved with new features', priority: 'high' });
   }
-  
   if (sections.some(s => s.includes('usage'))) {
-    sectionsToUpdate.push({
-      name: 'Usage',
-      reason: 'Commands or API may have changed',
-      priority: 'high'
-    });
+    sectionsToUpdate.push({ name: 'Usage', reason: 'Commands or API may have changed', priority: 'high' });
   }
-  
   return sectionsToUpdate;
 }
 
-/**
- * Intelligently merge new README content with existing README
- */
+// Merge README content intelligently
 export function mergeReadmeContent(existingContent, newContent, options = {}) {
-  const {
-    preserveCustomSections = true,
-    preserveHeader = false,
-    sectionsToUpdate = []
-  } = options;
-  
+  const { preserveCustomSections = true, preserveHeader = false, sectionsToUpdate = [] } = options;
   const existingSections = extractSections(existingContent);
   const newSections = extractSections(newContent);
-  
   const mergedSections = [];
   const processedSectionTitles = new Set();
-  
   const existingHeader = getHeaderContent(existingContent);
   const newHeader = getHeaderContent(newContent);
   const finalHeader = preserveHeader && existingHeader ? existingHeader : newHeader;
@@ -270,90 +202,52 @@ export function mergeReadmeContent(existingContent, newContent, options = {}) {
     const existingMatch = existingSections.find(s => normalizeTitle(s.title) === normalizedTitle);
     
     if (existingMatch && shouldPreserveSection(normalizedTitle, sectionsToUpdate)) {
-      mergedSections.push({
-        title: existingMatch.rawTitle,
-        content: existingMatch.content,
-        source: 'existing'
-      });
+      mergedSections.push({ title: existingMatch.rawTitle, content: existingMatch.content, source: 'existing' });
     } else {
-      mergedSections.push({
-        title: newSection.rawTitle,
-        content: newSection.content,
-        source: 'new'
-      });
+      mergedSections.push({ title: newSection.rawTitle, content: newSection.content, source: 'new' });
     }
-    
     processedSectionTitles.add(normalizedTitle);
   }
   
   if (preserveCustomSections) {
     for (const existingSection of existingSections) {
       const normalizedTitle = normalizeTitle(existingSection.title);
-      
       if (!processedSectionTitles.has(normalizedTitle) && isCustomSection(normalizedTitle)) {
-        mergedSections.push({
-          title: existingSection.rawTitle,
-          content: existingSection.content,
-          source: 'custom'
-        });
+        mergedSections.push({ title: existingSection.rawTitle, content: existingSection.content, source: 'custom' });
       }
     }
   }
   
   let result = finalHeader;
-  
   for (const section of mergedSections) {
-    result += '\n' + section.title + '\n\n';
-    result += section.content + '\n';
+    result += '\n' + section.title + '\n\n' + section.content + '\n';
   }
-  
   return result.trim() + '\n';
 }
 
-/**
- * Extract content before the first section header
- */
+// Extract header content
 function getHeaderContent(content) {
   const lines = content.split('\n');
   const headerLines = [];
-  
   for (const line of lines) {
-    if (/^#{1,6}\s+/.test(line)) {
-      break;
-    }
+    if (/^#{1,6}\s+/.test(line)) break;
     headerLines.push(line);
   }
-  
   return headerLines.join('\n').trim() + '\n\n';
 }
 
-/**
- * Normalize section title for comparison
- */
+// Normalize title for comparison
 function normalizeTitle(title) {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return title.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-/**
- * Check if a section should be preserved from existing README
- */
+// Check if section should be preserved
 function shouldPreserveSection(normalizedTitle, sectionsToUpdate) {
-  if (!sectionsToUpdate || sectionsToUpdate.length === 0) {
-    return false;
-  }
-  
-  return !sectionsToUpdate.some(sectionName => 
-    normalizeTitle(sectionName) === normalizedTitle
-  );
+  if (!sectionsToUpdate || sectionsToUpdate.length === 0) return false;
+  return !sectionsToUpdate.some(sectionName => normalizeTitle(sectionName) === normalizedTitle);
 }
 
-/**
- * Determine if a section is likely custom (user-added)
- */
+// Check if section is custom
 function isCustomSection(normalizedTitle) {
   const standardSections = [
     'installation', 'install', 'getting started', 'usage', 'features',
@@ -362,47 +256,30 @@ function isCustomSection(normalizedTitle) {
     'changelog', 'roadmap', 'acknowledgments', 'authors', 'faq', 'troubleshooting',
     'description', 'about', 'commands', 'options', 'how it works'
   ];
-  
-  return !standardSections.some(std => 
-    normalizedTitle.includes(std) || std.includes(normalizedTitle)
-  );
+  return !standardSections.some(std => normalizedTitle.includes(std) || std.includes(normalizedTitle));
 }
 
-/**
- * Create a diff summary showing what changed
- */
+// Create diff summary
 export function createDiffSummary(existingContent, newContent) {
   const existingSections = extractSections(existingContent);
   const newSections = extractSections(newContent);
-  
-  const summary = {
-    added: [],
-    removed: [],
-    modified: [],
-    unchanged: []
-  };
-  
+  const summary = { added: [], removed: [], modified: [], unchanged: [] };
   const existingTitles = new Set(existingSections.map(s => normalizeTitle(s.title)));
   const newTitles = new Set(newSections.map(s => normalizeTitle(s.title)));
   
   for (const newSection of newSections) {
     const normalized = normalizeTitle(newSection.title);
-    if (!existingTitles.has(normalized)) {
-      summary.added.push(newSection.title);
-    }
+    if (!existingTitles.has(normalized)) summary.added.push(newSection.title);
   }
   
   for (const existingSection of existingSections) {
     const normalized = normalizeTitle(existingSection.title);
-    if (!newTitles.has(normalized)) {
-      summary.removed.push(existingSection.title);
-    }
+    if (!newTitles.has(normalized)) summary.removed.push(existingSection.title);
   }
   
   for (const newSection of newSections) {
     const normalized = normalizeTitle(newSection.title);
     const existing = existingSections.find(s => normalizeTitle(s.title) === normalized);
-    
     if (existing) {
       if (existing.content.trim() !== newSection.content.trim()) {
         summary.modified.push(newSection.title);
@@ -411,13 +288,10 @@ export function createDiffSummary(existingContent, newContent) {
       }
     }
   }
-  
   return summary;
 }
 
-/**
- * Update only specific sections in existing README
- */
+// Update specific sections
 export function updateSpecificSections(existingContent, newContent, sectionsToUpdate) {
   return mergeReadmeContent(existingContent, newContent, {
     preserveCustomSections: true,
@@ -426,26 +300,11 @@ export function updateSpecificSections(existingContent, newContent, sectionsToUp
   });
 }
 
-/**
- * Update version numbers in README content
- */
+// Update version numbers in README
 export function updateVersionInReadme(content, newVersion) {
-  let updated = content;
-  
-  updated = updated.replace(
-    /!\[npm version\]\(https:\/\/img\.shields\.io\/npm\/v\/[^)]+\)/g,
-    `![npm version](https://img.shields.io/npm/v/${newVersion})`
-  );
-  
-  updated = updated.replace(
-    /version[:\s]+\d+\.\d+\.\d+/gi,
-    `version ${newVersion}`
-  );
-  
-  updated = updated.replace(
-    /\bv\d+\.\d+\.\d+\b/g,
-    `v${newVersion}`
-  );
-  
-  return updated;
+  return content
+    .replace(/!\[npm version\]\(https:\/\/img\.shields\.io\/npm\/v\/[^)]+\)/g, 
+             `![npm version](https://img.shields.io/npm/v/${newVersion})`)
+    .replace(/version[:\s]+\d+\.\d+\.\d+/gi, `version ${newVersion}`)
+    .replace(/\bv\d+\.\d+\.\d+\b/g, `v${newVersion}`);
 }

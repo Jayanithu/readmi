@@ -1,0 +1,31 @@
+# Development files
+test-readmi/
+SMART_UPDATE_FEATURE.md
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/

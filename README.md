@@ -1,240 +1,75 @@
-# 📝 ReadMI
+# readmi
 
-Modern AI-powered README generator that analyzes your codebase and creates professional documentation automatically.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+`readmi` is a modern, AI-powered command-line tool that helps you generate and update README files for your projects. It analyzes your project's source code and generates a comprehensive and informative README, saving you time and effort. Version: 2.4.5
 
 ## ✨ Features
 
-* **🔍 Smart Codebase Analysis** - Automatically analyzes your project structure and source code
-* **🤖 AI-Powered Generation** - Uses Google Gemini AI to generate comprehensive README files
-* **🌍 Multi-Language Support** - Generate READMEs in 10+ languages
-* **🎯 Project-Aware** - Extracts actual features and functionality from your code
-* **✨ Modern & Clean** - Generates well-formatted, professional documentation
-* **⚡ Zero Configuration** - Works out of the box with minimal setup
+*   ⚡️ **AI-Powered Generation:** Generates README content based on project analysis using Google's Gemini AI models.
+*   🚀 **Automatic Project Analysis:** Analyzes project structure, dependencies, and code to extract relevant information.
+*   🌐 **Multi-Language Support:** Generates READMEs in multiple languages, including English, Spanish, French, and more.
+*   🔄 **README Updating:** Detects outdated information in existing READMEs and suggests updates.
+*   ⚙️ **Configuration:** Allows users to configure API keys, preferred AI models, and languages.
 
 ## 📦 Installation
 
-### 🛠️ Prerequisites
-
-Before you begin, ensure you have:
-
-* Node.js (v14 or higher)
-* npm or yarn
-* Google AI API Key ([Get one here](https://makersuite.google.com/app/apikey))
-
-### ⚡ Quick Start
-
-**1. Install ReadMI globally:**
+To install `readmi` globally, run:
 
 ```bash
 npm install -g @jayanithu/readmi
 ```
 
-**2. Verify installation:**
+## 🚀 Usage/Quick Start
 
-```bash
-readmi -v
-```
-
-You should see the version number displayed.
-
-## 🔑 Getting Your Google AI API Key
-
-1. **Visit Google AI Studio:**
-
-   * Go to [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
-
-2. **Sign in:**
-
-   * Use your Google account to sign in
-
-3. **Create API Key:**
-
-   * Click "Create API Key"
-   * Select or create a Google Cloud project
-   * Copy your API key
-
-4. **Save your API Key:**
-
-   * When you first run `readmi`, you'll be prompted to enter your API key
-   * Choose to save it for future use
-
-> ⚠️ **Important:** Keep your API key secure and never commit it to version control.
-
-## 🚀 Usage
-
-### 📄 Generate README
-
-Navigate to your project directory and run:
+To generate a README for your project, navigate to your project's root directory in the terminal and run:
 
 ```bash
 readmi
 ```
 
-💡 **Pro Tip:** You can double-check your README at [https://readmi.jayanithu.dev/editor](https://readmi.jayanithu.dev/editor)
-
-### 🌐 Select Language
-
-Generate README in a specific language:
+To update an existing README, use the `--update-readme` or `-u` flag:
 
 ```bash
-readmi --select-language
+readmi --update-readme
 ```
 
-Or use the short form:
-
-```bash
-readmi -sl
-```
-
-### ⚙️ Configuration
-
-#### View Configuration
+You can also configure `readmi` using the `config` command:
 
 ```bash
 readmi config
 ```
 
-#### Set Preferred Language
+This will guide you through setting up your Google AI API key and preferred language.
+
+To select a language:
 
 ```bash
-readmi config -l
+readmi language
 ```
 
-#### Select Preferred Model
+## ⚙️ Configuration
 
-```bash
-readmi config model
-```
+`readmi` stores its configuration in a `config.json` file. You can configure the following:
 
-#### Remove Saved API Key
+*   **Google AI API Key:** Required to use the AI-powered generation.
+*   **Preferred AI Model:** Select from available Gemini models.
+*   **Preferred Language:** The language in which to generate the README.
 
-```bash
-readmi config -r
-```
+## 📜 Scripts/Commands
 
-#### Remove Preferred Model
+The `package.json` file includes the following script:
 
-```bash
-readmi config -rm
-```
+*   `start`: Starts the `readmi` tool.
 
-#### Remove Preferred Language
+## Contributing
 
-```bash
-readmi config -rl
-```
+Contributions are welcome! Feel free to submit pull requests or open issues for bug fixes, feature requests, or improvements.
 
-## 📚 Commands Reference
+## License
 
-### Main Commands
-
-| Command         | Description                         |
-| --------------- | ----------------------------------- |
-| `readmi`        | Generate README for current project |
-| `readmi config` | Manage configuration                |
-
-### Options
-
-| Option                   | Description              |
-| ------------------------ | ------------------------ |
-| `-v, --version`          | Display version number   |
-| `-h, --help`             | Show help information    |
-| `--update`               | Update to latest version |
-| `-sl, --select-language` | Select README language   |
-
-### Configuration Commands
-
-| Command               | Description               |
-| --------------------- | ------------------------- |
-| `readmi config -r`    | Remove saved API key      |
-| `readmi config -rm`   | Remove preferred model    |
-| `readmi config -rl`   | Remove preferred language |
-| `readmi config -l`    | Set preferred language    |
-| `readmi config model` | Select preferred AI model |
-
-## 🌎 Supported Languages
-
-ReadMI supports generating READMEs in the following languages:
-
-• English (en)
-• Spanish (es)
-• French (fr)
-• German (de)
-• Chinese (zh)
-• Japanese (ja)
-• Portuguese (pt)
-• Russian (ru)
-• Hindi (hi)
-• Arabic (ar)
-
-## ⚙️ How It Works
-
-1. **Project Analysis** 🔎
-
-   * Scans your project directory
-   * Reads package.json and configuration files
-   * Analyzes source code structure
-   * Detects dependencies and technologies
-
-2. **Code Understanding** 💻
-
-   * Reads key source files
-   * Extracts features and functionality
-   * Identifies project type (CLI, library, web app, etc.)
-   * Detects environment variables and configuration
-
-3. **AI Generation** 🤖
-
-   * Uses Google Gemini AI models
-   * Generates comprehensive documentation
-   * Includes relevant sections based on project type
-   * Formats with proper markdown syntax
-
-4. **Post-Processing** 🧹
-
-   * Cleans and formats the output
-   * Ensures proper code block formatting
-   * Adds project-specific badges
-   * Creates professional presentation
-
-## 🛠️ Troubleshooting
-
-### 🔑 API Key Issues
-
-If you encounter API key errors:
-
-* Verify your API key is correct
-* Check if the API key is saved: `readmi config`
-* Remove and re-enter: `readmi config -r`
-* Ensure you have internet connection
-
-### ❌ Model Not Available
-
-If a model is not available:
-
-* ReadMI will automatically try the next available model
-* Select a different model: `readmi config model`
-* Ensure your API key has access to Gemini models
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-
-• Report bugs
-• Suggest new features
-• Submit pull requests
-• Improve documentation
-
-Visit our [GitHub repository](https://github.com/jayanithu/readmi) to contribute.
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🆘 Support
-
-• **GitHub Issues:** [Report issues](https://github.com/jayanithu/readmi/issues)
-• **ReadMI Landing Page:** [readmi.jayanithu.dev](https://readmi.jayanithu.dev/)
-• **Author:** [jayanithu](https://github.com/Jayanithu)
+MIT License
 
 ---
+
+**Made with ❤️ using [ReadMI](https://github.com/jayanithu/readmi) by jayanithu**
