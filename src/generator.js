@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import { statSync } from 'fs';
 import chalk from 'chalk';
 import { getLanguageName, determineProjectType, generateBadges, postProcessReadme } from './utils.js';
+import { mergeReadmeContent, updateSpecificSections, updateVersionInReadme, createDiffSummary } from './readmeUpdater.js';
 
 export function buildPrompt(projectInfo, language) {
   const projectType = determineProjectType(projectInfo);
@@ -233,6 +234,104 @@ export async function generateReadme(apiKey, projectInfo, language, model, spinn
       throw new Error('API configuration error. Please check your API key and try again. Error: ' + error.message);
     }
     throw new Error(`README generation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Update existing README with smart merging
+ */
+export async function updateReadme(apiKey, projectInfo, language, model, spinner, readmeAnalysis, updateChoice, sectionsToUpdate = []) {
+  try {
+    if (updateChoice === 'version') {
+      // Version-only update
+      spinner.start(chalk.gray('  Updating version numbers...'));
+      
+      const updatedContent = updateVersionInReadme(readmeAnalysis.content, projectInfo.version);
+      await fs.writeFile('README.md', updatedContent);
+      
+      spinner.succeed(chalk.green('  README version updated'));
+      console.log(chalk.gray(`  Updated to version ${projectInfo.version}\n`));
+      return;
+    }
+
+    // Generate new README content
+    spinner.start(chalk.gray('  Generating updated content...'));
+    const promptText = buildPrompt(projectInfo, language);
+    
+    const result = await model.generateContent([{ text: promptText }]);
+    const response = await result.response;
+    const newContent = response.text();
+
+    if (!newContent) {
+      throw new Error('Generated content is empty');
+    }
+
+    const processedNewContent = postProcessReadme(newContent);
+    
+    spinner.text = chalk.gray('  Merging with existing README...');
+    
+    let finalContent;
+    
+    if (updateChoice === 'selective') {
+      // Update only selected sections
+      finalContent = updateSpecificSections(
+        readmeAnalysis.content,
+        processedNewContent,
+        sectionsToUpdate
+      );
+      
+      spinner.succeed(chalk.green('  README sections updated'));
+      console.log(chalk.gray(`  Updated sections: ${sectionsToUpdate.join(', ')}\n`));
+    } else {
+      // Full update with preservation
+      finalContent = mergeReadmeContent(
+        readmeAnalysis.content,
+        processedNewContent,
+        {
+          preserveCustomSections: true,
+          preserveHeader: false,
+          sectionsToUpdate: []
+        }
+      );
+      
+      // Show diff summary
+      const diff = createDiffSummary(readmeAnalysis.content, finalContent);
+      
+      spinner.succeed(chalk.green('  README updated'));
+      
+      if (diff.added.length > 0) {
+        console.log(chalk.green(`  ✓ Added: ${diff.added.join(', ')}`));
+      }
+      if (diff.modified.length > 0) {
+        console.log(chalk.yellow(`  ✓ Modified: ${diff.modified.join(', ')}`));
+      }
+      if (diff.removed.length > 0) {
+        console.log(chalk.red(`  ✓ Removed: ${diff.removed.join(', ')}`));
+      }
+      console.log();
+    }
+    
+    // Write updated README
+    await fs.writeFile('README.md', finalContent);
+    
+    const stats = statSync('README.md');
+    const fileSizeKB = (stats.size / 1024).toFixed(1);
+    const lineCount = finalContent.split('\n').length;
+    
+    console.log(
+      chalk.gray(`  ${lineCount} lines • ${fileSizeKB} KB • ${getLanguageName(language)}`) + '\n'
+    );
+    console.log(
+      chalk.cyan('  ✨ Pro tip: ') +
+      chalk.gray('Double-check your README at ') +
+      chalk.blue.underline('https://readmi.jayanithu.dev/editor') + '\n'
+    );
+    
+  } catch (error) {
+    if (error.message.includes('not found for API version')) {
+      throw new Error('API configuration error. Please check your API key and try again. Error: ' + error.message);
+    }
+    throw new Error(`README update failed: ${error.message}`);
   }
 }
 

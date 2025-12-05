@@ -24,6 +24,7 @@ export function showHelp() {
     chalk.bold('  Commands\n') +
     '\n' +
     chalk.cyan('  readmi') + chalk.gray('                    Generate README\n') +
+    chalk.cyan('  readmi -u') + chalk.gray('                 Update existing README\n') +
     chalk.cyan('  readmi config') + chalk.gray('             Manage configuration\n') +
     '\n' +
     chalk.bold('  Options\n') +
@@ -31,6 +32,7 @@ export function showHelp() {
     chalk.gray('  -v, --version') + chalk.gray('            Show version\n') +
     chalk.gray('  -h, --help') + chalk.gray('               Show help\n') +
     chalk.gray('  --update') + chalk.gray('                 Update to latest\n') +
+    chalk.gray('  -u, --update-readme') + chalk.gray('     Smart README update\n') +
     chalk.gray('  -sl, --select-language') + chalk.gray('  Select language\n') +
     '\n' +
     chalk.bold('  Configuration\n') +

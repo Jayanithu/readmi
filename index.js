@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import chalk from 'chalk';
 import ora from 'ora';
+import inquirer from 'inquirer';
 import { execSync } from 'child_process';
 import { analyzeProject } from './src/analyzer.js';
-import { generateReadme } from './src/generator.js';
+import { generateReadme, updateReadme } from './src/generator.js';
 import { selectModel, chooseModel } from './src/models.js';
 import { config, getApiKey, selectLanguage, handleConfig } from './src/config.js';
 import { showHeader, showVersion, showHelp } from './src/utils.js';
+import { analyzeExistingReadme, detectOutdatedInfo, identifySectionsToUpdate } from './src/readmeUpdater.js';
 
 const args = process.argv.slice(2);
 
@@ -57,6 +59,9 @@ class ReadmeGenerator {
         return;
       }
 
+      // Check for update mode
+      const isUpdateMode = args.includes('--update-readme') || args.includes('-u');
+
       this.spinner.start(chalk.gray('  Initializing...'));
       const apiKey = await getApiKey(this.spinner);
       
@@ -65,6 +70,12 @@ class ReadmeGenerator {
       
       if (projectInfo.name) {
         this.spinner.info(chalk.gray(`  Project: ${projectInfo.name}`));
+      }
+
+      // Handle update mode
+      if (isUpdateMode) {
+        await this.handleUpdateMode(apiKey, projectInfo);
+        return;
       }
       
       let language = config.get('preferredLanguage') || 'en';
@@ -85,6 +96,101 @@ class ReadmeGenerator {
       console.log(chalk.gray('\n  Tip: Run ') + chalk.cyan('readmi config') + chalk.gray(' to manage your API key\n'));
     }
     process.exit(1);
+  }
+
+  async handleUpdateMode(apiKey, projectInfo) {
+    try {
+      this.spinner.text = chalk.gray('  Analyzing existing README...');
+      
+      const readmeAnalysis = await analyzeExistingReadme('README.md');
+      
+      if (!readmeAnalysis || !readmeAnalysis.exists) {
+        this.spinner.warn(chalk.yellow('  No existing README found'));
+        console.log(chalk.gray('  Run ') + chalk.cyan('readmi') + chalk.gray(' to generate a new README\n'));
+        process.exit(0);
+      }
+
+      this.spinner.succeed(chalk.green('  README analyzed'));
+      
+      // Detect outdated information
+      const issues = detectOutdatedInfo(readmeAnalysis, projectInfo);
+      
+      if (issues.length > 0) {
+        console.log(chalk.yellow('\n  📋 Detected issues:\n'));
+        for (const issue of issues) {
+          const icon = issue.severity === 'high' ? '🔴' : issue.severity === 'medium' ? '🟡' : '🟢';
+          console.log(chalk.gray(`  ${icon} ${issue.message}`));
+        }
+        console.log();
+      } else {
+        console.log(chalk.green('\n  ✓ No obvious issues detected\n'));
+      }
+      
+      // Get sections that could be updated
+      const suggestedSections = identifySectionsToUpdate(readmeAnalysis, projectInfo);
+      
+      // Ask user what they want to update
+      const { updateChoice } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'updateChoice',
+          message: 'What would you like to update?',
+          choices: [
+            { name: '🔄 Update entire README (preserve custom sections)', value: 'full' },
+            { name: '📝 Select specific sections to update', value: 'selective' },
+            { name: '🔢 Update version numbers only', value: 'version' },
+            { name: '❌ Cancel', value: 'cancel' }
+          ]
+        }
+      ]);
+
+      if (updateChoice === 'cancel') {
+        console.log(chalk.gray('\n  Update cancelled\n'));
+        process.exit(0);
+      }
+
+      let sectionsToUpdate = [];
+      
+      if (updateChoice === 'selective') {
+        const sectionChoices = readmeAnalysis.sections
+          .filter(s => s.level <= 2)
+          .map(s => ({ name: s.title, value: s.title }));
+        
+        const { selectedSections } = await inquirer.prompt([
+          {
+            type: 'checkbox',
+            name: 'selectedSections',
+            message: 'Select sections to update:',
+            choices: sectionChoices,
+            validate: (answer) => {
+              if (answer.length === 0) {
+                return 'Please select at least one section';
+              }
+              return true;
+            }
+          }
+        ]);
+        
+        sectionsToUpdate = selectedSections;
+      }
+
+      const language = config.get('preferredLanguage') || 'en';
+      const model = await selectModel(apiKey, this.spinner);
+      
+      await updateReadme(
+        apiKey,
+        projectInfo,
+        language,
+        model,
+        this.spinner,
+        readmeAnalysis,
+        updateChoice,
+        sectionsToUpdate
+      );
+      
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 }
 
