@@ -1,9 +1,12 @@
 # Development files
 test-readmi/
 SMART_UPDATE_FEATURE.md
+OPTIMIZATION_SUMMARY.md
+README.full.md
+.husky/
 
 # Git files
-.git
+.git/
 .gitignore
 .gitattributes
 
@@ -29,3 +32,9 @@ coverage/
 # Build artifacts
 dist/
 build/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.full.md

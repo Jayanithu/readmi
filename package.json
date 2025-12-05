@@ -1,9 +1,14 @@
 {
   "name": "@jayanithu/readmi",
-  "version": "2.4.6",
+  "version": "2.4.7",
   "description": "Modern README generator powered by AI",
   "main": "index.js",
   "type": "module",
+  "files": [
+    "index.js",
+    "src/*.js",
+    "README.md"
+  ],
   "bin": {
     "readmi": "index.js"
   },
