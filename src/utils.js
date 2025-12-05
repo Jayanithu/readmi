@@ -3,7 +3,7 @@ import chalk from 'chalk';
 export function showHeader() {
   console.log(
     '\n' +
-    chalk.bold.cyan('  ReadMI') + chalk.gray(' v2.4.5') + '\n' +
+    chalk.bold.cyan('  ReadMI') + chalk.gray(' v2.4.6') + '\n' +
     chalk.gray('  AI-powered README generator') + '\n' +
     chalk.gray('  Run ') + chalk.cyan('readmi -h') + chalk.gray(' for help\n')
   );
@@ -12,7 +12,7 @@ export function showHeader() {
 export function showVersion() {
   console.log(
     '\n' +
-    chalk.bold.cyan('ReadMI') + ' v2.4.5\n' +
+    chalk.bold.cyan('ReadMI') + ' v2.4.6\n' +
     chalk.gray('Modern README generator powered by AI\n')
   );
   process.exit(0);
