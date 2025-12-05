@@ -3,17 +3,15 @@ import chalk from 'chalk';
 export function showHeader() {
   console.log(
     '\n' +
-    chalk.bold.cyan('  ReadMI') + chalk.gray(' v2.4.7') + '\n' +
-    chalk.gray('  AI-powered README generator') + '\n' +
-    chalk.gray('  Run ') + chalk.cyan('readmi -h') + chalk.gray(' for help\n')
+    chalk.bold.cyan('ReadMI') + chalk.dim(' · v2.4.8') + '\n' +
+    chalk.gray('AI-powered README generator') + '\n'
   );
 }
 
 export function showVersion() {
   console.log(
     '\n' +
-    chalk.bold.cyan('ReadMI') + ' v2.4.7\n' +
-    chalk.gray('Modern README generator powered by AI\n')
+    chalk.bold.cyan('ReadMI') + chalk.gray(' v2.4.8') + '\n'
   );
   process.exit(0);
 }
@@ -21,29 +19,23 @@ export function showVersion() {
 export function showHelp() {
   console.log(
     '\n' +
-    chalk.bold('  Commands\n') +
-    '\n' +
-    chalk.cyan('  readmi') + chalk.gray('                    Generate README\n') +
-    chalk.cyan('  readmi -u') + chalk.gray('                 Update existing README\n') +
-    chalk.cyan('  readmi config') + chalk.gray('             Manage configuration\n') +
-    '\n' +
-    chalk.bold('  Options\n') +
-    '\n' +
-    chalk.gray('  -v, --version') + chalk.gray('            Show version\n') +
-    chalk.gray('  -h, --help') + chalk.gray('               Show help\n') +
-    chalk.gray('  --update') + chalk.gray('                 Update to latest\n') +
-    chalk.gray('  -u, --update-readme') + chalk.gray('     Smart README update\n') +
-    chalk.gray('  -sl, --select-language') + chalk.gray('  Select language\n') +
-    '\n' +
-    chalk.bold('  Configuration\n') +
-    '\n' +
-    chalk.gray('  config -r') + chalk.gray('                Remove API key\n') +
-    chalk.gray('  config -rm') + chalk.gray('               Remove model\n') +
-    chalk.gray('  config -rl') + chalk.gray('               Remove language\n') +
-    chalk.gray('  config -l') + chalk.gray('                Set language\n') +
-    chalk.gray('  config model') + chalk.gray('             Select model\n') +
-    '\n' +
-    chalk.gray('  https://github.com/jayanithu/readmi\n')
+    chalk.bold.white('COMMANDS') + '\n' +
+    chalk.cyan('  readmi              ') + chalk.gray('Generate README') + '\n' +
+    chalk.cyan('  readmi -u           ') + chalk.gray('Update existing README') + '\n' +
+    chalk.cyan('  readmi config       ') + chalk.gray('Manage configuration') + '\n\n' +
+    chalk.bold.white('OPTIONS') + '\n' +
+    chalk.gray('  -v, --version       Show version') + '\n' +
+    chalk.gray('  -h, --help          Show help') + '\n' +
+    chalk.gray('  --update            Update to latest') + '\n' +
+    chalk.gray('  -u                  Smart README update') + '\n' +
+    chalk.gray('  -sl                 Select language') + '\n\n' +
+    chalk.bold.white('CONFIG') + '\n' +
+    chalk.gray('  config -r           Remove API key') + '\n' +
+    chalk.gray('  config -rm          Remove model') + '\n' +
+    chalk.gray('  config -rl          Remove language') + '\n' +
+    chalk.gray('  config -l           Set language') + '\n' +
+    chalk.gray('  config model        Select model') + '\n\n' +
+    chalk.cyan('https://github.com/jayanithu/readmi') + '\n'
   );
   process.exit(0);
 }

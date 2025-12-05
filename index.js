@@ -28,13 +28,16 @@ class ReadmeGenerator {
       }
 
       if (args.includes('--update')) {
-        const spinner = ora(chalk.gray('  Checking for updates...')).start();
+        const spinner = ora({
+          text: chalk.gray('Checking for updates...'),
+          spinner: 'dots'
+        }).start();
         try {
           execSync('npm install -g @jayanithu/readmi@latest');
-          spinner.succeed(chalk.green('  Updated to latest version'));
+          spinner.succeed(chalk.green.bold('✓ Updated to latest version'));
           process.exit(0);
         } catch (error) {
-          spinner.fail(chalk.red('  Update failed: ') + error.message);
+          spinner.fail(chalk.red('✗ Update failed: ') + error.message);
           process.exit(1);
         }
       }
@@ -62,14 +65,21 @@ class ReadmeGenerator {
       // Check for update mode
       const isUpdateMode = args.includes('--update-readme') || args.includes('-u');
 
-      this.spinner.start(chalk.gray('  Initializing...'));
+      this.spinner = ora({
+        text: chalk.gray('Initializing...'),
+        spinner: 'dots'
+      }).start();
       const apiKey = await getApiKey(this.spinner);
       
-      this.spinner.text = chalk.gray('  Analyzing project...');
+      this.spinner.text = chalk.gray('Analyzing project...');
       const projectInfo = await analyzeProject(this.currentDir);
       
       if (projectInfo.name) {
-        this.spinner.info(chalk.gray(`  Project: ${projectInfo.name}`));
+        this.spinner.stopAndPersist({
+          symbol: chalk.cyan('→'),
+          text: chalk.white('Project: ') + chalk.cyan(projectInfo.name)
+        });
+        this.spinner.start();
       }
 
       // Handle update mode
@@ -91,39 +101,55 @@ class ReadmeGenerator {
   }
 
   handleError(error) {
-    this.spinner.fail(chalk.red('  Error: ') + error.message);
+    this.spinner.fail(chalk.red.bold('✗ ') + error.message);
     if (error.message.includes('API')) {
-      console.log(chalk.gray('\n  Tip: Run ') + chalk.cyan('readmi config') + chalk.gray(' to manage your API key\n'));
+      console.log(
+        '\n' +
+        chalk.yellow('💡 Tip') + '\n' +
+        chalk.gray('Run ') + chalk.cyan('readmi config') + chalk.gray(' to setup') + '\n'
+      );
     }
     process.exit(1);
   }
 
   async handleUpdateMode(apiKey, projectInfo) {
     try {
-      this.spinner.text = chalk.gray('  Analyzing existing README...');
+      this.spinner.text = chalk.gray('Analyzing existing README...');
       
       const readmeAnalysis = await analyzeExistingReadme('README.md');
       
       if (!readmeAnalysis || !readmeAnalysis.exists) {
-        this.spinner.warn(chalk.yellow('  No existing README found'));
-        console.log(chalk.gray('  Run ') + chalk.cyan('readmi') + chalk.gray(' to generate a new README\n'));
+        this.spinner.stopAndPersist({
+          symbol: chalk.yellow('⚠'),
+          text: chalk.yellow('No existing README found')
+        });
+        console.log(
+          '\n' +
+          chalk.dim('  → ') + chalk.gray('Run ') + chalk.cyan('readmi') + chalk.gray(' to generate a new README\n')
+        );
         process.exit(0);
       }
 
-      this.spinner.succeed(chalk.green('  README analyzed'));
+      this.spinner.succeed(chalk.green.bold('✓ README analyzed'));
       
       // Detect outdated information
       const issues = detectOutdatedInfo(readmeAnalysis, projectInfo);
       
       if (issues.length > 0) {
-        console.log(chalk.yellow('\n  📋 Detected issues:\n'));
+        console.log(
+          '\n' +
+          chalk.yellow.bold('Detected Issues') + '\n'
+        );
         for (const issue of issues) {
-          const icon = issue.severity === 'high' ? '🔴' : issue.severity === 'medium' ? '🟡' : '🟢';
-          console.log(chalk.gray(`  ${icon} ${issue.message}`));
+          const icon = issue.severity === 'high' ? chalk.red('•') : issue.severity === 'medium' ? chalk.yellow('•') : chalk.green('•');
+          console.log('  ' + icon + ' ' + chalk.gray(issue.message));
         }
         console.log();
       } else {
-        console.log(chalk.green('\n  ✓ No obvious issues detected\n'));
+        console.log(
+          '\n' +
+          chalk.green.bold('✓ No issues detected') + '\n'
+        );
       }
       
       // Get sections that could be updated

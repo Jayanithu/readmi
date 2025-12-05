@@ -90,11 +90,20 @@ export async function selectModel(apiKey, spinner) {
 
   const modelType = selectedModel?.toLowerCase() || '';
   if (modelType.includes('2.5')) {
-    spinner.info(chalk.gray('  Using Gemini 2.5'));
+    spinner.stopAndPersist({
+      symbol: chalk.cyan('→'),
+      text: chalk.white('Model: ') + chalk.cyan.bold('Gemini 2.5')
+    });
   } else if (modelType.includes('2.0')) {
-    spinner.info(chalk.gray('  Using Gemini 2.0'));
+    spinner.stopAndPersist({
+      symbol: chalk.cyan('→'),
+      text: chalk.white('Model: ') + chalk.cyan.bold('Gemini 2.0')
+    });
   } else if (modelType.includes('1.5')) {
-    spinner.info(chalk.gray('  Using Gemini 1.5'));
+    spinner.stopAndPersist({
+      symbol: chalk.cyan('→'),
+      text: chalk.white('Model: ') + chalk.cyan.bold('Gemini 1.5')
+    });
   }
 
   return workingModel;
@@ -104,7 +113,7 @@ export async function chooseModel(spinner) {
   const savedModel = config.get('preferredModel');
   
   spinner.stop();
-  console.log(chalk.gray('\n  Model Selection\n'));
+  console.log('\n' + chalk.bold.white('Model Selection') + '\n');
   
   const { model } = await inquirer.prompt([
     {

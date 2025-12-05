@@ -220,14 +220,13 @@ export async function generateReadme(apiKey, projectInfo, language, model, spinn
     const fileSizeKB = (stats.size / 1024).toFixed(1);
     const lineCount = processedContent.split('\n').length;
     
-    spinner.succeed(chalk.green(`  ${filename} generated`));
+    spinner.succeed(chalk.green.bold(`${filename} generated`));
     console.log(
-      chalk.gray(`  ${lineCount} lines • ${fileSizeKB} KB • ${getLanguageName(language)}`) + '\n'
-    );
-    console.log(
-      chalk.cyan('  ✨ Pro tip: ') +
-      chalk.gray('Double-check your README at ') +
-      chalk.blue.underline('https://readmi.jayanithu.dev/editor') + '\n'
+      '\n' +
+      chalk.gray('  Lines: ') + chalk.white(lineCount) + chalk.dim(' │ ') + 
+      chalk.gray('Size: ') + chalk.white(fileSizeKB + ' KB') + chalk.dim(' │ ') + 
+      chalk.gray(getLanguageName(language)) + '\n\n' +
+      chalk.dim('  → ') + chalk.gray('Review at ') + chalk.cyan.underline('https://readmi.jayanithu.dev/editor') + '\n'
     );
   } catch (error) {
     if (error.message.includes('not found for API version')) {

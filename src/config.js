@@ -17,7 +17,7 @@ export async function getApiKey(spinner) {
   if (savedApiKey) return savedApiKey;
 
   spinner.stop();
-  console.log(chalk.gray('\n  API Key Setup\n'));
+  console.log('\n' + chalk.bold.white('API Key Setup') + '\n');
   const { apiKey, saveKey } = await inquirer.prompt([
     {
       type: 'password',
@@ -63,7 +63,7 @@ export async function selectLanguage(spinner) {
   ];
   
   spinner.stop();
-  console.log(chalk.gray('\n  Language Selection\n'));
+  console.log('\n' + chalk.bold.white('Language Selection') + '\n');
   const { language } = await inquirer.prompt([
     {
       type: 'list',
@@ -96,27 +96,27 @@ export async function handleConfig(args, spinner) {
   if (args[1] === '--remove-key' || args[1] === '-r') {
     if (config.has('apiKey')) {
       config.delete('apiKey');
-      console.log(chalk.green('\n  API key removed\n'));
+      console.log(chalk.green('\n✓ API key removed\n'));
     } else {
-      console.log(chalk.gray('\n  No API key found\n'));
+      console.log(chalk.dim('\nNo API key found\n'));
     }
     return;
   }
   if (args[1] === '--remove-model' || args[1] === '-rm') {
     if (config.has('preferredModel')) {
       config.delete('preferredModel');
-      console.log(chalk.green('\n  Model removed\n'));
+      console.log(chalk.green('\n✓ Model removed\n'));
     } else {
-      console.log(chalk.gray('\n  No model found\n'));
+      console.log(chalk.dim('\nNo model found\n'));
     }
     return;
   }
   if (args[1] === '--remove-language' || args[1] === '-rl') {
     if (config.has('preferredLanguage')) {
       config.delete('preferredLanguage');
-      console.log(chalk.green('\n  Language removed\n'));
+      console.log(chalk.green('\n✓ Language removed\n'));
     } else {
-      console.log(chalk.gray('\n  No language found\n'));
+      console.log(chalk.dim('\nNo language found\n'));
     }
     return;
   }
@@ -127,27 +127,22 @@ export async function handleConfig(args, spinner) {
     return 'select-model';
   }
   
-  const apiKeyStatus = config.has('apiKey') ? chalk.green('saved') : chalk.gray('not set');
-  const modelStatus = config.has('preferredModel') ? chalk.cyan(config.get('preferredModel')) : chalk.gray('not set');
-  const langStatus = config.has('preferredLanguage') ? chalk.cyan(getLanguageName(config.get('preferredLanguage'))) : chalk.gray('not set');
+  const apiKeyStatus = config.has('apiKey') ? chalk.green('✓ saved') : chalk.dim('not set');
+  const modelStatus = config.has('preferredModel') ? chalk.cyan(config.get('preferredModel')) : chalk.dim('not set');
+  const langStatus = config.has('preferredLanguage') ? chalk.cyan(getLanguageName(config.get('preferredLanguage'))) : chalk.dim('not set');
   
   console.log(
     '\n' +
-    chalk.bold('  Configuration\n') +
-    '\n' +
-    chalk.bold('  Commands\n') +
-    '\n' +
-    chalk.gray('  config -r') + chalk.gray('                Remove API key\n') +
-    chalk.gray('  config -rm') + chalk.gray('               Remove model\n') +
-    chalk.gray('  config -rl') + chalk.gray('               Remove language\n') +
-    chalk.gray('  config -l') + chalk.gray('                Set language\n') +
-    chalk.gray('  config model') + chalk.gray('             Select model\n') +
-    '\n' +
-    chalk.bold('  Current\n') +
-    '\n' +
-    `  API Key:     ${apiKeyStatus}\n` +
-    `  Model:       ${modelStatus}\n` +
-    `  Language:    ${langStatus}\n`
+    chalk.bold.white('Configuration') + '\n\n' +
+    chalk.gray('  API Key      ') + apiKeyStatus + '\n' +
+    chalk.gray('  Model        ') + modelStatus + '\n' +
+    chalk.gray('  Language     ') + langStatus + '\n\n' +
+    chalk.bold.white('Commands') + '\n' +
+    chalk.cyan('  config -r        ') + chalk.gray('Remove API key') + '\n' +
+    chalk.cyan('  config -rm       ') + chalk.gray('Remove model') + '\n' +
+    chalk.cyan('  config -rl       ') + chalk.gray('Remove language') + '\n' +
+    chalk.cyan('  config -l        ') + chalk.gray('Set language') + '\n' +
+    chalk.cyan('  config model     ') + chalk.gray('Select model') + '\n'
   );
 }
 
